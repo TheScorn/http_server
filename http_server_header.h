@@ -1,0 +1,12 @@
+#define HTTP_SERVER_VERSION_MAJOR 0
+#define HTTP_SERVER_VERISON_MINOR 4
+
+#ifndef HTTP_SERVER_H
+#define HTTP_SERVER_H
+
+
+
+#endif
+
+
+#define DEFAULT_PORT 54001

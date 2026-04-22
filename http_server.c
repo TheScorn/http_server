@@ -10,21 +10,41 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <signal.h>
 
-int main() {
+static volatile int serverSocket;
+static void sig_handler(int _);
+
+int main(int argc, char *argv[]) {
     
+    printf("Http Server initializing\n");
+    
+    bool verbose = VERBOSE_DEFAULT;
+    
+    
+    //obsługa argumentów funkcji main
+    //zmiana portu
+    //zmiana trybu
+    //pomoc
+
+    if(verbose) {
+        printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
+    }
+
+
+
     uint16_t selected_port = DEFAULT_PORT;
 
     
 
     //create socket
-    int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(serverSocket == -1) {
         fprintf(stderr, "Error occured while creating socket\n");
         close(serverSocket);
         return -1;
     }
-    else {
+    else if(verbose) {
         printf("Socket created\n");
     }
 
@@ -41,7 +61,7 @@ int main() {
         close(serverSocket);
         return -2;
     }
-    else {
+    else if(verbose) {
         printf("Bind complete\n");
     }
 
@@ -52,13 +72,18 @@ int main() {
         close(serverSocket);
         return -3;
     }
-    else {
+    else if(verbose) {
         printf("Listening on port: %d\n", selected_port);
     }
 
 
+    
+
+
+    signal(SIGINT, sig_handler);
     //handle
     while(true) {
+
         struct sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
         int *client_fd = (int *)malloc(sizeof(int));
@@ -80,4 +105,12 @@ int main() {
     printf("Socket closed\n");
     printf("http server shutting down.\n");
 
+}
+
+static void sig_handler(int _) {
+    (void)_;
+    close(serverSocket);
+    printf("Socket closed\n");
+    printf("Http Server shutting down.\n");
+    exit(0);
 }

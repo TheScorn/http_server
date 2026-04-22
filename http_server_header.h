@@ -1,5 +1,5 @@
 #define HTTP_SERVER_VERSION_MAJOR 0
-#define HTTP_SERVER_VERISON_MINOR 4
+#define HTTP_SERVER_VERISON_MINOR 5
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -23,7 +23,7 @@ void build_http_response(const char *file_name, const char *file_ext, char *resp
 
 #endif
 
-
+#define VERBOSE_DEFAULT true
 #define DEFAULT_PORT 54001
 #define PAGES "./pages"
 #define DEFAULT_BUFFER_SIZE 104857600

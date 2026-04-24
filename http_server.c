@@ -19,15 +19,23 @@ int main(int argc, char *argv[]) {
     
     printf("Http Server initializing\n");
     
-    bool verbose = VERBOSE_DEFAULT;
+    bool verbose_init = VERBOSE_INIT_DEFAULT;
+    bool verbose_input = VERBOSE_INPUT_DEFAULT;
     
-    
+
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
     //pomoc
 
-    if(verbose) {
+    
+
+    //struktura argumentów do przekazania do funkcji obsługującej zapytania
+    struct args_struct args;
+    args.verbose_init = verbose_init;
+    args.verbose_input = verbose_input;
+
+    if(verbose_init) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
     }
 
@@ -44,7 +52,7 @@ int main(int argc, char *argv[]) {
         close(serverSocket);
         return -1;
     }
-    else if(verbose) {
+    else if(verbose_init) {
         printf("Socket created\n");
     }
 
@@ -61,7 +69,7 @@ int main(int argc, char *argv[]) {
         close(serverSocket);
         return -2;
     }
-    else if(verbose) {
+    else if(verbose_init) {
         printf("Bind complete\n");
     }
 
@@ -72,7 +80,7 @@ int main(int argc, char *argv[]) {
         close(serverSocket);
         return -3;
     }
-    else if(verbose) {
+    else if(verbose_init) {
         printf("Listening on port: %d\n", selected_port);
     }
 
@@ -93,9 +101,14 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+
+        
+
         pthread_t thread_id;
 
-        pthread_create(&thread_id, NULL, handle_client, (void *)client_fd);
+        
+        args.client_fd = client_fd;
+        pthread_create(&thread_id, NULL, handle_client, (void *)&args); //było wcześniej (void *)client_fd
         pthread_detach(thread_id);
 
     }

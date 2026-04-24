@@ -151,13 +151,20 @@ void build_http_response(const char *file_name, const char *file_ext, char *resp
 
 
 
+
 void *handle_client(void *arg) {
     
     chdir(PAGES);
     //to jest samo w sobie okej, ale trzeba sprawdzać czy jesteśmy w pages
     //pages powinno być ustawiane podczas instalacji
+    printf("przed castem");
 
-    int client_fd = *((int *)arg);
+    struct args_struct* args = arg;
+
+    int client_fd = *(args->client_fd);
+
+
+    
     //socket
 
     int buffer_size = DEFAULT_BUFFER_SIZE;
@@ -170,7 +177,7 @@ void *handle_client(void *arg) {
 
     //odebranie wiad
     ssize_t bytes_received = recv(client_fd, buffer, buffer_size, 0);
-    printf("request recvd\n");
+    
 
 
     if(bytes_received > 0) {
@@ -196,7 +203,6 @@ void *handle_client(void *arg) {
             build_http_response(file_name, file_ext, response, &response_len, buffer_size);
 
             send(client_fd, response, response_len, 0);
-            printf("response sent\n");
 
             free(response);
             free(file_name);
@@ -206,7 +212,6 @@ void *handle_client(void *arg) {
 
     }
     close(client_fd);
-    free(arg);
     free(buffer);
 
 

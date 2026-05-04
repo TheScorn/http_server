@@ -1,11 +1,20 @@
 #define HTTP_SERVER_VERSION_MAJOR 0
-#define HTTP_SERVER_VERISON_MINOR 6
+#define HTTP_SERVER_VERISON_MINOR 7
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
+
+struct args_struct {
+    int* client_fd;
+    bool verbose_init;
+    bool verbose_input;
+    bool print_help;
+    uint16_t selected_port;
+};
 
 void *handle_client(void *arg);
 
@@ -21,17 +30,16 @@ char *url_decode(const char *src);
 
 void build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len, int buffer_size);
 
-struct args_struct {
-    int* client_fd;
-    bool verbose_init;
-    bool verbose_input;
-};
+int handle_arguments(int argc, char **argv,struct args_struct *args);
+
+
 
 
 #endif
 
-#define VERBOSE_INIT_DEFAULT true
-#define VERBOSE_INPUT_DEFAULT true
+#define VERBOSE_INIT_DEFAULT false
+#define VERBOSE_INPUT_DEFAULT false
+#define PRINT_HELP_DEFAULT false
 #define DEFAULT_PORT 54001
 #define PAGES "./pages"
 #define DEFAULT_BUFFER_SIZE 104857600

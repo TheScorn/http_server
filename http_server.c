@@ -15,14 +15,14 @@
 static volatile int serverSocket;
 static void sig_handler(int _);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     
-    printf("Http Server initializing\n");
+    
     
     bool verbose_init = VERBOSE_INIT_DEFAULT;
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
-    
-
+    bool print_help = PRINT_HELP_DEFAULT;
+    uint16_t selected_port = DEFAULT_PORT;
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -34,14 +34,29 @@ int main(int argc, char *argv[]) {
     struct args_struct args;
     args.verbose_init = verbose_init;
     args.verbose_input = verbose_input;
+    args.print_help = print_help;
+    args.selected_port = selected_port;
 
-    if(verbose_init) {
+    int handle_arg_ret = handle_arguments(argc, argv, &args);
+    if(handle_arg_ret != 0) {
+        fprintf(stderr, "Error occured during argument processing. Error code: %d\n", handle_arg_ret);
+        return -1;
+    }
+
+    if(args.print_help) {
+        printf("Help message placeholder\n");
+        return 0;
+    }
+
+    printf("Http Server initializing\n");
+
+    if(args.verbose_init) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
     }
 
 
 
-    uint16_t selected_port = DEFAULT_PORT;
+    
 
     
 
@@ -52,7 +67,7 @@ int main(int argc, char *argv[]) {
         close(serverSocket);
         return -1;
     }
-    else if(verbose_init) {
+    else if(args.verbose_init) {
         printf("Socket created\n");
     }
 
@@ -61,15 +76,15 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in hint;
     memset(&hint , 0, sizeof(hint));
     hint.sin_family = AF_INET;
-    hint.sin_port = htons(selected_port); //konwersja na big endian
+    hint.sin_port = htons(args.selected_port); //konwersja na big endian
     inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);//0.0.0.0 samo wybiera adres
 
     if(bind(serverSocket, (struct sockaddr*)&hint, sizeof(hint)) == -1) {
-        fprintf(stderr, "Error occured while binding");
+        fprintf(stderr, "Error occured while binding\n");
         close(serverSocket);
         return -2;
     }
-    else if(verbose_init) {
+    else if(args.verbose_init) {
         printf("Bind complete\n");
     }
 
@@ -80,8 +95,8 @@ int main(int argc, char *argv[]) {
         close(serverSocket);
         return -3;
     }
-    else if(verbose_init) {
-        printf("Listening on port: %d\n", selected_port);
+    else if(args.verbose_init) {
+        printf("Listening on port: %d\n", args.selected_port);
     }
 
 

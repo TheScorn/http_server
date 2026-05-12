@@ -1,5 +1,5 @@
 #define HTTP_SERVER_VERSION_MAJOR 0
-#define HTTP_SERVER_VERISON_MINOR 7
+#define HTTP_SERVER_VERISON_MINOR 75
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -8,12 +8,16 @@
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
 
-struct args_struct {
-    int* client_fd;
+
+struct input_args_struct {
     bool verbose_init;
-    bool verbose_input;
     bool print_help;
     uint16_t selected_port;
+};
+
+struct handle_args_struct {
+    int * client_fd;
+    bool verbose_init;
 };
 
 void *handle_client(void *arg);
@@ -30,7 +34,7 @@ char *url_decode(const char *src);
 
 void build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len, int buffer_size);
 
-int handle_arguments(int argc, char **argv,struct args_struct *args);
+int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
 
 

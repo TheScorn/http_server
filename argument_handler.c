@@ -18,7 +18,7 @@
  * 
  * @return 0 if execution was successful or -1 if error occured.
  */
-int handle_arguments(int argc, char **argv, struct args_struct *args) {
+int handle_arguments(int argc, char **argv, struct input_args_struct *args) {
 
     int ret = 0;
 

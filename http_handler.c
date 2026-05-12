@@ -157,12 +157,11 @@ void *handle_client(void *arg) {
     chdir(PAGES);
     //to jest samo w sobie okej, ale trzeba sprawdzać czy jesteśmy w pages
     //pages powinno być ustawiane podczas instalacji
-    printf("przed castem");
 
-    struct args_struct* args = arg;
+    struct handle_args_struct* args = arg;
 
     int client_fd = *(args->client_fd);
-
+    bool verbose = args->verbose_init;
 
     
     //socket

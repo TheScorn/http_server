@@ -16,7 +16,7 @@
  * @param argv address of the list of arguments given to main
  * @param args address of a struct consisting of variables to be set
  * 
- * @return 0 if execution was successful or -1 if error occured.
+ * @return 0 if execution was successful some negative int if error occured.
  */
 int handle_arguments(int argc, char **argv, struct input_args_struct *args) {
 

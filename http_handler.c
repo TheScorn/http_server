@@ -151,7 +151,13 @@ void build_http_response(const char *file_name, const char *file_ext, char *resp
 
 
 
-
+/**
+ * @brief Function handling http clients after connection is established
+ * 
+ * To do
+ * 
+ * @param arg void pointer representing the struct of type handle_args_struct
+ */
 void *handle_client(void *arg) {
     
     chdir(PAGES);

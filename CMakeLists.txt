@@ -1,19 +1,30 @@
-#minimalny cmake
+#cmake min version
 cmake_minimum_required(VERSION 3.13)
 
-#nazwa projektu
+#project name and version
 project(http_server VERSION 0.75)
 
 configure_file(http_server_header.h.in ${PROJECT_SOURCE_DIR}/http_server_header.h)
 
 add_executable(http_server.out http_server.c)
 
+#lib with function http_handler
 add_library(http_handler http_handler.c)
 set_target_properties(http_handler PROPERTIES PUBLIC_HEADER http_server_header)
 
+#lib_with_function handle_arguments
 add_library(argument_handler argument_handler.c)
 set_target_properties(argument_handler PROPERTIES PUBLIC_HEADER http_server_header)
 
+
+#lib with function build_http_response
+add_library(http_build_response http_build_response.c)
+set_target_properties(http_build_response PROPERTIES PUBLIC_HEADER http_server_header)
+
+#lib with helper functions
+add_library(helper_functions helper_functions.c)
+set_target_properties(helper_functions PROPERTIES PUBLIC_HEADER http_server_header)
+
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler)
+target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions)

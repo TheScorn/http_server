@@ -14,24 +14,24 @@
  * 
  * @return 0 if file was found, -1 if wasn't.
  */
-int get_file_info(char *filename, struct page_info_struct* page_info) {
+int get_file_info(char *filename, struct file_info_struct* file_info) {
     //trzeba będzie ogarnąć łączenie z bazą danych
     //najepiej sprawdzać je w inicie i ewentualnie przerwać init
 
 
     //teraz trochę oszukaństwo żeby nie kombinować ze złożonością póki nie mamy autoryzacji
     if(strcasecmp(filename, "test.html\0") == 0) {
-        page_info->file_path = "test.html";
-        page_info->zone_id = 100;
-        page_info->zone_name = "Test";
-        page_info->zone_type = 0;
+        file_info->file_path = "test.html";
+        file_info->zone_id = 100;
+        file_info->zone_name = "Test";
+        file_info->zone_type = 0;
         return 0;
     }
     else if(strcasecmp(filename, "test.js\0") == 0) {
-        page_info->file_path = "test.js";
-        page_info->zone_id = 100;
-        page_info->zone_name = "Test";
-        page_info->zone_type = 0;
+        file_info->file_path = "test.js";
+        file_info->zone_id = 100;
+        file_info->zone_name = "Test";
+        file_info->zone_type = 0;
         return 0;
     }
 

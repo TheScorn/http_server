@@ -122,8 +122,8 @@ void *handle_client(void *arg) {
         
         //w tym miejscu odwołujemy się do bazy danych z plikami
         //niestety chyba trzeba sprawdzić każdy i zestawić ze strefami
-        struct page_info_struct page_info; //create page info structure pointer
-        int db_file_info_status = get_file_info(file_name, &page_info);
+        struct file_info_struct file_info; //create page info structure pointer
+        int db_file_info_status = get_file_info(file_name, &file_info);
         
         //Od razu można obsłużyć wszystkie przypadki gdy pliku nie udało się znaleźć
 
@@ -141,14 +141,16 @@ void *handle_client(void *arg) {
             
             send(client_fd, response, response_len, 0);
         }
-
-
-        int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
-        if(build_response_status == -1) {
-            fprintf(stderr, "File stated in data base but could not be opened.\n");
-        }
+        else {
+            int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
+            if(build_response_status == -1) {
+                fprintf(stderr, "File stated in data base but could not be opened.\n");
+            }
         
-        send(client_fd, response, response_len, 0);
+            send(client_fd, response, response_len, 0);
+            
+        }
+
         free(response);
         free(file_name);
 

@@ -1,5 +1,5 @@
 #define HTTP_SERVER_VERSION_MAJOR 0
-#define HTTP_SERVER_VERISON_MINOR 75
+#define HTTP_SERVER_VERISON_MINOR 8
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -20,7 +20,7 @@ struct handle_args_struct {
     bool verbose_init;
 };
 
-struct page_info_struct {
+struct file_info_struct {
     char* file_path;
     int zone_id;
     char* zone_name;
@@ -43,7 +43,7 @@ int build_http_response(const char *file_name, const char *file_ext, char *respo
 
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
-int get_file_info(char *filename, struct page_info_struct* page_info);
+int get_file_info(char *filename, struct file_info_struct* page_info);
 
 
 #endif

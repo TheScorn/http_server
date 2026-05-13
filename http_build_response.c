@@ -10,7 +10,7 @@
 
 
 
-int build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len, int buffer_size) {
+int build_http_response(const char *file_path, const char *file_ext, char *response, size_t *response_len, int buffer_size) {
 
     //to może zostać - bardzo prosta funkcja
     const char *mime_type = get_mime_type(file_ext);
@@ -25,7 +25,7 @@ int build_http_response(const char *file_name, const char *file_ext, char *respo
             "\r\n",
             mime_type);
 
-    int file_fd = open(file_name, O_RDONLY);
+    int file_fd = open(file_path, O_RDONLY);
     if(file_fd == -1) {
         snprintf(response, buffer_size,
                 "HTTP/1.1 404 Not Found\r\n"

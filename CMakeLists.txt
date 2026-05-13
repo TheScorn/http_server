@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 #project name and version
-project(http_server VERSION 0.75)
+project(http_server VERSION 0.8)
 
 configure_file(http_server_header.h.in ${PROJECT_SOURCE_DIR}/http_server_header.h)
 
@@ -25,6 +25,10 @@ set_target_properties(http_build_response PROPERTIES PUBLIC_HEADER http_server_h
 add_library(helper_functions helper_functions.c)
 set_target_properties(helper_functions PROPERTIES PUBLIC_HEADER http_server_header)
 
+#lib for interacting with data base
+add_library(db_interface db_interface.c)
+set_target_properties(db_interface PROPERTIES PUBLIC_HEADER http_server_header)
+
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions)
+target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface)

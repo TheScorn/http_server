@@ -20,6 +20,13 @@ struct handle_args_struct {
     bool verbose_init;
 };
 
+struct page_info_struct {
+    char* file_path;
+    int zone_id;
+    char* zone_name;
+    int zone_type;
+};
+
 void *handle_client(void *arg);
 
 const char *get_file_extension(const char *filename);
@@ -32,11 +39,11 @@ char *get_file_case_insensitive(const char *file_name);
 
 char *url_decode(const char *src);
 
-void build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len, int buffer_size);
+int build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len, int buffer_size);
 
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
-
+int get_file_info(char *filename, struct page_info_struct* page_info);
 
 
 #endif

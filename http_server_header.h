@@ -1,5 +1,5 @@
 #define HTTP_SERVER_VERSION_MAJOR 0
-#define HTTP_SERVER_VERISON_MINOR 8
+#define HTTP_SERVER_VERISON_MINOR 9
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -27,6 +27,14 @@ struct file_info_struct {
     int zone_type;
 };
 
+struct client_info_struct {
+    bool logged_in;
+    char* name;
+    char* email;
+    char* password;
+    int access_flags;
+};
+
 void *handle_client(void *arg);
 
 const char *get_file_extension(const char *filename);
@@ -44,6 +52,8 @@ int build_http_response(const char *file_name, const char *file_ext, char *respo
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
 int get_file_info(char *filename, struct file_info_struct* page_info);
+
+int get_client_info(char* name, char* password, struct client_info_struct* client_info);
 
 
 #endif

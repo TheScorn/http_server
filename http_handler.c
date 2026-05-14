@@ -26,6 +26,14 @@ void *handle_client(void *arg) {
     //to jest samo w sobie okej, ale trzeba sprawdzać czy jesteśmy w pages
     //pages powinno być ustawiane podczas instalacji
 
+
+    struct client_info_struct client_info;
+    client_info.logged_in = false;
+    client_info.name = "default";
+    client_info.password = "default";
+    client_info.access_flags = 0;
+
+
     struct handle_args_struct* args = arg;
 
     int client_fd = *(args->client_fd);
@@ -82,6 +90,10 @@ void *handle_client(void *arg) {
 
         //Jeśli nagłówka nie ma to wysyłamy 401 Unauthorized i zastanawiamy się jak to obsłużyć automatycznie
 
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //REGEX FINDING filename
         regcomp(&regex, "^GET /([^ ]*) HTTP/1", REG_EXTENDED);//poprawić kiedyś tak żeby przechodziła pusta strona i napisać przekierowanie na main
 
         regmatch_t matches[2];
@@ -90,13 +102,14 @@ void *handle_client(void *arg) {
             if(verbose) {
                 printf("No match found in regexec 1. No data sent.");
             }
+            //early exit after getting corrupted request
             close(client_fd);
             free(buffer);
-            exit(0);
+            return NULL;
         }
 
 
-        //tutaj chcemy działać na skopiowanym buforze żeby nie zespuć sobie potem autoryzacji
+        //copying buffer for future use
         char *page_name_buffer = (char *)malloc(sizeof(char) * buffer_size);
 
         strcpy(page_name_buffer, buffer);
@@ -108,8 +121,52 @@ void *handle_client(void *arg) {
 
         //char z zapisaną nazwą pliku
         const char *url_encoded_file_name = page_name_buffer + matches[1].rm_so;
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        //dekodowanie url
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //REGEX FINDING Authorization
+        bool authorization = false;
+        
+        
+        char *auth_buffer  =(char *)malloc(sizeof(char) * buffer_size);
+        strcpy(auth_buffer, buffer);
+
+        free(buffer);
+
+        //([^ ]+) matchuje gdy wystąpi min 1 znak inny niż spacja
+        regcomp(&regex, "\r\nAuthorization: Basic ([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+
+        if(regexec(&regex, auth_buffer, 2, matches, 0) == 0) {
+            authorization = true;
+
+            auth_buffer[matches[1].rm_eo] = '\0';
+
+            char* authorization = auth_buffer + matches[1].rm_so;
+
+            authorization[strcspn(authorization, "\r\n")] = '\0';
+
+            //int db_login_status = get_client_info(authorization, authorization, &client_info);
+            
+            
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //file processing
+        
+        //URL decoding
         char *file_name = url_decode(url_encoded_file_name);
 
         
@@ -142,6 +199,70 @@ void *handle_client(void *arg) {
             send(client_fd, response, response_len, 0);
         }
         else {
+
+            //Access checking
+            //niech flaga 100 oznacza dostęp do strefy restricted na chwilę
+            
+            //is Authorization required
+            if(file_info.zone_type != 0) {
+
+                //is client logged in
+                if(client_info.logged_in) {
+
+                    //does client have access to the zone
+                    if(client_info.access_flags & file_info.zone_id > 0) {
+                        
+                        int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
+                        if(build_response_status == -1) {
+                            fprintf(stderr, "File stated in data base but could not be opened.\n");
+                        }
+        
+                        send(client_fd, response, response_len, 0);
+
+
+                    }
+                    else {
+                        snprintf(response, buffer_size,
+                        "HTTP/1.1 403 Forbidden");
+                        response_len = strlen(response);
+                        send(client_fd, response, response_len, 0);
+
+                        free(response);
+                        free(file_name);
+                        free(auth_buffer);
+                        free(page_name_buffer);
+                        close(client_fd);
+                        return NULL;
+
+                    }
+
+
+                }
+                else {
+                    snprintf(response, buffer_size,
+                    "HTTP/1.1 401 Unauthorized\r\n"
+                    "WWW-Authenticate: Basic realm=\"Global\""
+                    );
+
+                    response_len = strlen(response);
+                    send(client_fd, response, response_len, 0);
+
+                    free(response);
+                    free(file_name);
+                    free(auth_buffer);
+                    free(page_name_buffer);
+                    close(client_fd);
+                    return NULL;
+
+                }
+
+            }
+
+
+
+
+
+
             int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
             if(build_response_status == -1) {
                 fprintf(stderr, "File stated in data base but could not be opened.\n");
@@ -157,7 +278,6 @@ void *handle_client(void *arg) {
         
     }
     close(client_fd);
-    free(buffer);
 
 
     return NULL;

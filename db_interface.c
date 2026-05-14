@@ -34,11 +34,53 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
         file_info->zone_type = 0;
         return 0;
     }
-
+    else if(strcasecmp(filename, "restricted.html\0") == 0) {
+        file_info->file_path = "restricted.html";
+        file_info->zone_id = 0b100;
+        file_info->zone_name = "Restricted";
+        file_info->zone_type = 1;
+        return 0;
+    }
     return -1;
 
 }
 
+
+int get_client_info(char* name, char* password, struct client_info_struct* client_info) {
+    //To Do (db connection)
+
+
+
+    //zwraca 0 jeśli logowanie poprawne
+
+    //zwraca -1 jeśli nie ma użytkownika w bazie
+
+    //zwraca -2 jeśli hasło niepoprawne
+
+    if(strcasecmp(name, "admin") == 0) {
+        if(strcasecmp(password, "passwd") == 0) {
+            client_info->name = name;
+            client_info->password = password;
+            client_info->email = "mucha446@gmail.com";
+            client_info->access_flags = 0b111;
+            client_info->logged_in = true;
+            return 0;
+        }
+        else {
+            return -2;
+        }
+    }
+    else {
+        return -1;    
+    }
+
+
+}
+
+
+bool flag_zone_id_check(int flags, int zone_id) {
+
+}
 
 
 

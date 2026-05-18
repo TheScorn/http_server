@@ -99,6 +99,48 @@ char *get_file_case_insensitive(const char *file_name) {
 
 }
 
+/**
+ * @brief Function for getting login from authorization
+ * 
+ * Function returns login from http base64 decoded authorization header in the form of login:password
+ * 
+ * @param authorization pointer to char list containing authorization info
+ * 
+ * @return pointer to char list containing username
+ * 
+ */
+char * get_username(char * authorization) {
+
+    char * pointer_to_colon = strchr(authorization, ':');
+
+    int index_of_colon = (int)(pointer_to_colon - authorization);
+
+    char * username = (char *)malloc(strlen(authorization) + 1);
+    strcpy(username, authorization);
+    username[index_of_colon] = '\0';
+
+    return username;
+
+
+}
+
+/**
+ * @brief Function for getting password from authorization
+ * 
+ * Function returns password from http base64 decoded authorization header in the form of login:password
+ * 
+ * @param authorization pointer to char list containing authorization info
+ * 
+ * @return pointer to char list containing password
+ */
+char * get_password(char * authorization) {
+
+    char * pointer_to_colon = strchr(authorization, ':');
+
+    return pointer_to_colon + 1;
+
+}
+
 
 /**
  * @brief url decoder
@@ -132,3 +174,6 @@ char *url_decode(const char *src) {
     decoded[decoded_len] = '\0';
     return decoded;
 }
+
+
+

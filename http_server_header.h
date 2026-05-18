@@ -1,5 +1,5 @@
-#define HTTP_SERVER_VERSION_MAJOR 0
-#define HTTP_SERVER_VERISON_MINOR 9
+#define HTTP_SERVER_VERSION_MAJOR 1
+#define HTTP_SERVER_VERISON_MINOR 0
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -54,6 +54,12 @@ int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 int get_file_info(char *filename, struct file_info_struct* page_info);
 
 int get_client_info(char* name, char* password, struct client_info_struct* client_info);
+
+unsigned char * base64_decode(const unsigned char *src, size_t len, size_t *out_len);
+
+char * get_username(char * authorization);
+
+char * get_password(char * authorization);
 
 
 #endif

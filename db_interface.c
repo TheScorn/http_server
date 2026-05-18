@@ -78,10 +78,6 @@ int get_client_info(char* name, char* password, struct client_info_struct* clien
 }
 
 
-bool flag_zone_id_check(int flags, int zone_id) {
-
-}
-
 
 
 

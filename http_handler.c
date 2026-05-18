@@ -145,10 +145,22 @@ void *handle_client(void *arg) {
             char* authorization = auth_buffer + matches[1].rm_so;
 
             authorization[strcspn(authorization, "\r\n")] = '\0';
+            
+            //free(auth_buffer);
 
-            //int db_login_status = get_client_info(authorization, authorization, &client_info);
+            size_t out_len;
+            unsigned char * authorization_decoded = base64_decode(authorization, strlen(authorization), &out_len);
             
+            char * username = get_username(authorization_decoded);
+
+            char * password = get_password(authorization_decoded);
+
             
+
+            int get_client_info_status = get_client_info(username, password, &client_info);
+            
+
+
         }
 
         
@@ -262,14 +274,14 @@ void *handle_client(void *arg) {
 
 
 
-
+            /*
             int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
             if(build_response_status == -1) {
                 fprintf(stderr, "File stated in data base but could not be opened.\n");
             }
         
             send(client_fd, response, response_len, 0);
-            
+            */
         }
 
         free(response);

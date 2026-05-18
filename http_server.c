@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     }
 
     if(input_args.print_help) {
-        printf("Help message placeholder\n");
+        printf("######################################3\nHttp server\n###########################################\nVersion: %d.%d\nFlags:\n-h: Prints helper message.\nUsage: http_server.out -n\n-p: Sets port to be used by server.\nUsage: http_server.out -p [port number]\n-v: Turns on verbose mode.\nUsage: http_server.out -v\n",HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
         return 0;
     }
 

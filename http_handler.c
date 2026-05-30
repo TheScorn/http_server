@@ -269,19 +269,22 @@ void *handle_client(void *arg) {
                 }
 
             }
-
-
-
-
-
-            /*
-            int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
-            if(build_response_status == -1) {
-                fprintf(stderr, "File stated in data base but could not be opened.\n");
-            }
+            else {
+                
+                int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
+                if(build_response_status == -1) {
+                    fprintf(stderr, "File stated in data base but could not be opened.\n");
+                }
         
-            send(client_fd, response, response_len, 0);
-            */
+                send(client_fd, response, response_len, 0);
+            
+            }
+
+
+
+
+
+            
         }
 
         free(response);

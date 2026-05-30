@@ -61,6 +61,7 @@ char * get_username(char * authorization);
 
 char * get_password(char * authorization);
 
+int test_con();
 
 #endif
 
@@ -70,3 +71,7 @@ char * get_password(char * authorization);
 #define DEFAULT_PORT 54001
 #define PAGES "./pages"
 #define DEFAULT_BUFFER_SIZE 104857600
+#define DB_HOST "localhost"
+#define DB_USER "http_server"
+#define DB_PASSWORD "passwd"
+#define DB "HTTP_SERVER_INFO"

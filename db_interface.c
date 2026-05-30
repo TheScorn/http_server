@@ -1,9 +1,40 @@
 #include "http_server_header.h"
 #include <strings.h>
+#include <mysql/mysql.h>
+
 
 
 /**
- * @brief Function for accquireing info aboute file from data base
+ * @brief Function for testing db connection
+ * 
+ * Function tests if database is available and if the user and password are correct.
+ * 
+ * @return 0 if connection is successful, -1 if error occured during initializing of MYSQL object, -2 if connection was unsuccessful.
+ * 
+ */
+int test_con() {
+    return 0;
+    MYSQL *conn = mysql_init(NULL); //init a mysql structure
+
+    if(!conn) {
+        return -1;
+    }
+
+    if(!mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, DB, 0, NULL, 0)) {
+        return -2;
+    }
+
+    mysql_close(conn);
+
+    return 0;
+
+}
+
+
+
+
+/**
+ * @brief Function for accquiring info aboute file from data base
  * 
  * Function(WILL BE) using connector to receive data from data base. It will
  * connect file to its zone, then return required information.
@@ -46,6 +77,22 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
 }
 
 
+
+/**
+ * @brief Function for acquiring and checking user info
+ * 
+ * Function retrieves users password, email and access flags.
+ * Checks password validity and logs user by changing field "logged_in" to True.
+ * 
+ * @param name char list containing username
+ * 
+ * @param password char list containing password to be validated
+ * 
+ * @param client_info_struct structure containing client info to be updated
+ * 
+ * @return 0 if username is in database and password is correct, -1 if user does not appear in database, -2 if password is incorrect.
+ * 
+ */
 int get_client_info(char* name, char* password, struct client_info_struct* client_info) {
     //To Do (db connection)
 

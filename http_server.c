@@ -59,6 +59,23 @@ int main(int argc, char **argv) {
 
 
 
+    //db connection test
+    int test_db_con = test_con();
+    if(test_db_con == -1) {
+        fprintf(stderr, "MYSQL structure failed to initialize.\n");
+        close(serverSocket);
+        return -1;
+    }
+    else if(test_db_con == -2) {
+        fprintf(stderr, "Connection test to database failed.\n");
+        close(serverSocket);
+        return -1;
+    }
+
+    //connection successful
+    if(input_args.verbose_init) {
+        printf("Connection to database successful.\n");
+    }
     
 
     

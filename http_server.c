@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
     bool print_help = PRINT_HELP_DEFAULT;
     uint16_t selected_port = DEFAULT_PORT;
+    uint16_t auth_port = DEFAULT_AUTH_PORT;
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -58,17 +59,39 @@ int main(int argc, char **argv) {
     }
 
 
+    //auth server con test
+    int auth_con_status = test_auth_con(auth_port);
+    if(auth_con_status == -1) {
+        fprintf(stderr, "Client socket for auth server connection could not be created.\n");
+        return -1;
+    }
+    else if(auth_con_status == -2) {
+        fprintf(stderr, "Connection to auth server failed.\n");
+        return -1;
+    }
+    else if(auth_con_status == -4) {
+        fprintf(stderr, "Test acknowledged message was incorrect.\n");
+        return -1;
+    }
+    else if(auth_con_status == -3) {
+        fprintf(stderr, "No bytes received from auth server.\n");
+        return -1;
+    }
+
+    
+    if(input_args.verbose_init) {
+        printf("Connection to authorization server successful.\n");
+    }
+
 
     //db connection test
     int test_db_con = test_con();
     if(test_db_con == -1) {
         fprintf(stderr, "MYSQL structure failed to initialize.\n");
-        close(serverSocket);
         return -1;
     }
     else if(test_db_con == -2) {
         fprintf(stderr, "Connection test to database failed.\n");
-        close(serverSocket);
         return -1;
     }
 
@@ -132,7 +155,7 @@ int main(int argc, char **argv) {
         int *client_fd = (int *)malloc(sizeof(int));
 
         if((*client_fd = accept(serverSocket, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
-            fprintf(stderr, "Accept failed");
+            fprintf(stderr, "Accept failed.\n");
             continue;
         }
 

@@ -29,10 +29,14 @@ set_target_properties(helper_functions PROPERTIES PUBLIC_HEADER http_server_head
 add_library(db_interface db_interface.c)
 set_target_properties(db_interface PROPERTIES PUBLIC_HEADER http_server_header)
 
+#lib for authorization server interface
+add_library(auth_interface auth_interface.c)
+set_target_properties(auth_interface PROPERTIES PUBLIC_HEADER http_server_header)
+
 #lib for base64 decode
 add_library(base64 base64.c)
 set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64)
+target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface auth_interface base64)

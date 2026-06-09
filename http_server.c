@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
     }
 
-
+    
     //auth server con test
     int auth_con_status = test_auth_con(auth_port);
     if(auth_con_status == -1) {
@@ -82,6 +82,8 @@ int main(int argc, char **argv) {
     if(input_args.verbose_init) {
         printf("Connection to authorization server successful.\n");
     }
+    
+
 
 
     //db connection test

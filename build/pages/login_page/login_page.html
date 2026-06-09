@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" e>
+    <head>
+        <title>Login</title>
+        
+            <link rel="stylesheet" type="text/css" href="login_page_style.css">
+
+       
+    </head>
+    
+    <body style="background-color: gray;">
+        <div class="page-body">
+            <div class="top-bar">
+                Home Server    Version <span id="versionField" class="varsion-field"></span>
+                
+            </div>
+
+            <div class="sub-top-bar">
+                <button id="buttonMainPage" class="sub-top-bar-button">Main Page</button>
+                <span id="paragraphLogintitle" class="login-title-paragraph">Login Form</span>
+            </div>
+
+            <div class="page-main-body">
+                <div id="formDiv" class="form-div">
+                    <form id="loginForm" class="login-form">
+                        <div id="usernameField" class="field">
+                            <label>Login:</label>
+                            <input id="login" type="text" placeholder="Your login...">
+                        </div>
+                        <div id="passwordField" class="field">
+                            <label>Password:</label>
+                            <input  id="password" type="password" placeholder="Your password...">
+                        </div>
+                        <button id="sendFormButton" class="send-form-button">Login</button>
+                    </form>
+                </div>
+            </div>
+            
+
+        </div>
+
+        <script src="login_page.js"></script>
+
+    </body>
+</html>

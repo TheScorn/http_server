@@ -24,7 +24,9 @@ int build_http_response(const char *file_path, const char *file_ext, char *respo
             "Content-Type: %s\r\n"
             "\r\n",
             mime_type);
-
+    
+    
+    
     int file_fd = open(file_path, O_RDONLY);
     if(file_fd == -1) {
         snprintf(response, buffer_size,

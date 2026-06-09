@@ -57,7 +57,6 @@ void *handle_client(void *arg) {
     //do tej pory jest git i się nic nie zmieni poza logami z połączeń
 
 
-
     if(bytes_received > 0) {//jeśli otrzymaliśmy cokolwiek
         
         regex_t regex;
@@ -180,7 +179,7 @@ void *handle_client(void *arg) {
         
         //URL decoding
         char *file_name = url_decode(url_encoded_file_name);
-
+        
         
         //stąd widzimy jak ograniczony jest regex
 
@@ -188,12 +187,13 @@ void *handle_client(void *arg) {
         char file_ext[32];
         strcpy(file_ext, get_file_extension(file_name));
         
-        
+
         //w tym miejscu odwołujemy się do bazy danych z plikami
         //niestety chyba trzeba sprawdzić każdy i zestawić ze strefami
         struct file_info_struct file_info; //create page info structure pointer
         int db_file_info_status = get_file_info(file_name, &file_info);
         
+
         //Od razu można obsłużyć wszystkie przypadki gdy pliku nie udało się znaleźć
 
         char* response = (char *)malloc(buffer_size * 2 * sizeof(char));
@@ -224,7 +224,7 @@ void *handle_client(void *arg) {
                     //does client have access to the zone
                     if(client_info.access_flags & file_info.zone_id > 0) {
                         
-                        int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
+                        int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
                         if(build_response_status == -1) {
                             fprintf(stderr, "File stated in data base but could not be opened.\n");
                         }
@@ -271,11 +271,12 @@ void *handle_client(void *arg) {
             }
             else {
                 
-                int build_response_status = build_http_response(file_name, file_ext, response, &response_len, buffer_size);
+                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
                 }
-        
+                
+
                 send(client_fd, response, response_len, 0);
             
             }

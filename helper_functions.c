@@ -1,5 +1,6 @@
 #include "http_server_header.h"
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -49,6 +50,9 @@ const char *get_file_extension(const char *filename) {
 const char *get_mime_type(const char *file_ext) {
     if(strcasecmp(file_ext, "html") == 0 || strcasecmp(file_ext,"htm") == 0) {
         return "text/html";    
+    }
+    else if(strcasecmp(file_ext, "css") == 0) {
+        return "text/css";
     }
     else if(strcasecmp(file_ext, "txt") == 0) {
         return "text/plain";

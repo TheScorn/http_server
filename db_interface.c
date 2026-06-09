@@ -51,22 +51,51 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
 
 
     //teraz trochę oszukaństwo żeby nie kombinować ze złożonością póki nie mamy autoryzacji
-    if(strcasecmp(filename, "test.html\0") == 0) {
-        file_info->file_path = "test.html";
-        file_info->zone_id = 100;
-        file_info->zone_name = "Test";
+    if(strcasecmp(filename, "main_page.html\0") == 0) {
+        file_info->file_path = "main_page/main_page.html";
+        file_info->zone_id = 000;
+        file_info->zone_name = "Main";
         file_info->zone_type = 0;
         return 0;
     }
-    else if(strcasecmp(filename, "test.js\0") == 0) {
-        file_info->file_path = "test.js";
-        file_info->zone_id = 100;
-        file_info->zone_name = "Test";
+    else if(strcasecmp(filename, "main_page.js\0") == 0) {
+        file_info->file_path = "main_page/main_page.js";
+        file_info->zone_id = 000;
+        file_info->zone_name = "Main";
         file_info->zone_type = 0;
         return 0;
     }
+    else if(strcasecmp(filename, "main_page_style.css\0") == 0) {
+        file_info->file_path = "main_page/main_page_style.css";
+        file_info->zone_id = 000;
+        file_info->zone_name = "Main";
+        file_info->zone_type = 0;
+        return 0;
+    }
+    if(strcasecmp(filename, "login_page.html\0") == 0) {
+        file_info->file_path = "login_page/login_page.html";
+        file_info->zone_id = 000;
+        file_info->zone_name = "Main";
+        file_info->zone_type = 0;
+        return 0;
+    }
+    else if(strcasecmp(filename, "login_page.js\0") == 0) {
+        file_info->file_path = "login_page/login_page.js";
+        file_info->zone_id = 000;
+        file_info->zone_name = "Main";
+        file_info->zone_type = 0;
+        return 0;
+    }
+    else if(strcasecmp(filename, "login_page_style.css\0") == 0) {
+        file_info->file_path = "login_page/login_page_style.css";
+        file_info->zone_id = 000;
+        file_info->zone_name = "Main";
+        file_info->zone_type = 0;
+        return 0;
+    }
+
     else if(strcasecmp(filename, "restricted.html\0") == 0) {
-        file_info->file_path = "restricted.html";
+        file_info->file_path = "restricted/restricted.html";
         file_info->zone_id = 0b100;
         file_info->zone_name = "Restricted";
         file_info->zone_type = 1;

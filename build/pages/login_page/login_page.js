@@ -1,8 +1,6 @@
 let serverVersionMajor = 0;
 let serverVersionMinor = 0;
 
-let authServerIP = "192.168.0.129";
-let authServerPort = "54003";
 
 function setServerVersionInfo() {
     document.getElementById("versionField").innerText = serverVersionMajor.toString() + "." + serverVersionMinor.toString();
@@ -20,7 +18,7 @@ async function sendLoginInfo() {
     const loginInfoData = new FormData(loginInfo);
 
     try {
-        const response = await fetch("http://" + authServerIP + ":" + authServerPort, {
+        const response = await fetch(window.location.origin, {
             method: "POST",
             body: loginInfoData,
 

@@ -23,183 +23,94 @@
 void *handle_client(void *arg) {
     
     chdir(PAGES);
-    //to jest samo w sobie okej, ale trzeba sprawdzać czy jesteśmy w pages
-    //pages powinno być ustawiane podczas instalacji
-
-
-    struct client_info_struct client_info;
-    client_info.logged_in = false;
-    client_info.name = "default";
-    client_info.password = "default";
-    client_info.access_flags = 0;
-
-
     struct handle_args_struct* args = arg;
 
     int client_fd = *(args->client_fd);
     bool verbose = args->verbose_init;
 
-    
-    //socket
+    //trzeba zaimplementować sprawdzanie typu połączenia
+    //rozbić tą funkcję na kilka mniejszych
+    //0: NONE - nierozpoznane połączenie
+    //1: HTTP request
+    //2: Login request
+    //3: Logout request
+
+    ////////////////////////////////////////////////////////////////
+    char connection_type = 0;
+
 
     int buffer_size = DEFAULT_BUFFER_SIZE;
-    //miejsce na mechanizm przypisujący ine wartości
-    ////////////////////////////////////
-
     char *buffer = (char *)malloc(buffer_size * sizeof(char));
     //miejsce na przychodzącą wiad
 
-    
 
     //odebranie wiad
     ssize_t bytes_received = recv(client_fd, buffer, buffer_size, 0);
+    //czy cokolwiek odebrane
+    if(bytes_received == 0) {
+        free(buffer);
+        close(client_fd);
+        return NULL;
+    }
+
+    //////////////////////sprawdzamy czy to typ 1
+    regex_t regex;
+    regcomp(&regex, "^GET /([^ ]*) HTTP/1", REG_EXTENDED);
+    regmatch_t matches[2];
     
-    //do tej pory jest git i się nic nie zmieni poza logami z połączeń
+    if(regexec(&regex, buffer, 2, matches, 0) == 0) {
+        connection_type = 1;
+    }
+
+    //////////////////////////sprawdzamy czy typ 2
+    regcomp(&regex, "^POST / HTTP/1.1*"
+            "Content-Disposition: form-data; name=\"login\"*"
+            "Content-Disposition: form-data; name=\"password\"*", REG_EXTENDED);
+    if(regexec(&regex, buffer, 2, matches, 0) == 0) {
+        connection_type = 2;
+    }
+
+    //sprawdzanie czy typ 3
+    //TODO
+    
+
+    //Obsługa http request
+    if(connection_type == 1) {
+        struct client_info_struct client_info;
+        client_info.logged_in = false;
+        client_info.name = "default";
+        client_info.password = "default";
+        client_info.access_flags = 0;
 
 
-    if(bytes_received > 0) {//jeśli otrzymaliśmy cokolwiek
-        
-        regex_t regex;
-        //w zasadzie wszystko tutaj trzeba zmienić
-        //chcemy regexem wyciągnąć nazwę strony
-        //(najlepiej żeby działało i z rozszerzeniem strony i bez)
-        //tu trzeba sprawdzić czy jest kropka - jeśli jest to sprawdzić rozszrzenie i szukać tylko rzeczy przed nią
-        //z nazwą strony lub pliku odwołujemy się do bazy danych(to na później teraz wpiszemy to na stałe)
-        //Z bazy wyciągamy info o stronie czyli
-        //1) jej nazwę pliku lub może lepiej ścieżkę(na razie niech będzie nazwa)
-        //2) jej typ (0 - dostęp ogólny, 1 - dostęp po zalogowaniu(administracyjna), 2 - dostęp po zalogowaniu(strona personalna))
-        //
-        //każdy resource trzeba dodać do bazy i odnosić do danej przestrzeni strony
-        //dostępność określamy na podstawie przestrzeni
-        //(można najpierw spróbować zrobić zabezpieczenia tylko na stronach i sprawdzić czy da się dobrać do zasobów tam gdzie powinno się dać)
-        //(i czy są blokowane tam gdzie powinny być)
+        //szukamy jaką stronę trzeba wysłać
+        regcomp(&regex, "^GET /([^ ]*) HTTP/1", REG_EXTENDED);
 
-        //główną będzie global
-        
-        //Jeśli jest nagłówek to:
-        //Dekodujemy base64
-        //Bierzemy username i szukamy użytkownika w bazie
-        //Wyciągamy jego hasło
-        //Robimy strcasecmp
-        //Jeśli się zgadza to:
-        // oddajemy stronę
-        //(pomijamy na ten moment strony personalne które trzeba jakoś ustawić przed wysłaniem. Od tego będzie pewnie kolejny wielki moduł)
-        //Jeśli nie to:
-        //Wysyłamy 403 Forbidden
+        //nie sprawdzamy czy jest jakiś match bo to już nam ogarnął regex do typu połączenia
+        regexec(&regex, buffer, 2, matches, 0);
 
-        //Jeśli nagłówka nie ma to wysyłamy 401 Unauthorized i zastanawiamy się jak to obsłużyć automatycznie
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //REGEX FINDING filename
-        regcomp(&regex, "^GET /([^ ]*) HTTP/1", REG_EXTENDED);//poprawić kiedyś tak żeby przechodziła pusta strona i napisać przekierowanie na main
-
-        regmatch_t matches[2];
-
-        if(regexec(&regex, buffer, 2, matches, 0) != 0) {
-            if(verbose) {
-                printf("No match found in regexec 1. No data sent.");
-            }
-            //early exit after getting corrupted request
-            close(client_fd);
-            free(buffer);
-            return NULL;
-        }
-
-
-        //copying buffer for future use
+        //miejsce na page name
         char *page_name_buffer = (char *)malloc(sizeof(char) * buffer_size);
 
         strcpy(page_name_buffer, buffer);
-
-        //ustawiamy koniec dopasowania na null terminator
-        //page_name_buffer[matches[1].rm_eo] = '\0';
+        
         page_name_buffer[matches[1].rm_eo] = '\0';
 
-
-        //char z zapisaną nazwą pliku
+        //char z nazwą pliku
         const char *url_encoded_file_name = page_name_buffer + matches[1].rm_so;
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //REGEX FINDING Authorization
-        bool authorization = false;
-        
-        
-        char *auth_buffer  =(char *)malloc(sizeof(char) * buffer_size);
-        strcpy(auth_buffer, buffer);
-
-        free(buffer);
-
-        //([^ ]+) matchuje gdy wystąpi min 1 znak inny niż spacja
-        regcomp(&regex, "\r\nAuthorization: Basic ([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
-
-        if(regexec(&regex, auth_buffer, 2, matches, 0) == 0) {
-            authorization = true;
-
-            auth_buffer[matches[1].rm_eo] = '\0';
-
-            char* authorization = auth_buffer + matches[1].rm_so;
-
-            authorization[strcspn(authorization, "\r\n")] = '\0';
-            
-            //free(auth_buffer);
-
-            size_t out_len;
-            unsigned char * authorization_decoded = base64_decode(authorization, strlen(authorization), &out_len);
-            
-            char * username = get_username(authorization_decoded);
-
-            char * password = get_password(authorization_decoded);
-
-            
-
-            int get_client_info_status = get_client_info(username, password, &client_info);
-            
-
-
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////
-        //file processing
-        
-        //URL decoding
         char *file_name = url_decode(url_encoded_file_name);
-        
-        
-        //stąd widzimy jak ograniczony jest regex
-
-        //sprawdzanie typu pliku.
+        //rozszerzenie pliku
         char file_ext[32];
         strcpy(file_ext, get_file_extension(file_name));
         
-
-        //w tym miejscu odwołujemy się do bazy danych z plikami
-        //niestety chyba trzeba sprawdzić każdy i zestawić ze strefami
-        struct file_info_struct file_info; //create page info structure pointer
-        int db_file_info_status = get_file_info(file_name, &file_info);
-        
-
-        //Od razu można obsłużyć wszystkie przypadki gdy pliku nie udało się znaleźć
-
+        //miejsce na odpowiedź
         char* response = (char *)malloc(buffer_size * 2 * sizeof(char));
         size_t response_len = strlen(response);
 
-        //file not in db send
+        struct file_info_struct file_info; //struktura do przechowywania info o stronie
+        int db_file_info_status = get_file_info(file_name, &file_info);
+
+        //jeśli w bazie nie ma takiego pliku
         if(db_file_info_status < 0) {
             snprintf(response, buffer_size,
             "HTTP/1.1 404 Not Found\r\n"
@@ -209,93 +120,125 @@ void *handle_client(void *arg) {
             response_len = strlen(response);
             
             send(client_fd, response, response_len, 0);
+            free(response);
+            free(page_name_buffer);
+            free(file_name);
+            close(client_fd);
+            return NULL;
         }
-        else {
-
-            //Access checking
-            //niech flaga 100 oznacza dostęp do strefy restricted na chwilę
-            
-            //is Authorization required
-            if(file_info.zone_type != 0) {
-
-                //is client logged in
-                if(client_info.logged_in) {
-
-                    //does client have access to the zone
-                    if(client_info.access_flags & file_info.zone_id > 0) {
-                        
-                        int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
-                        if(build_response_status == -1) {
-                            fprintf(stderr, "File stated in data base but could not be opened.\n");
-                        }
-        
-                        send(client_fd, response, response_len, 0);
 
 
-                    }
-                    else {
-                        snprintf(response, buffer_size,
-                        "HTTP/1.1 403 Forbidden");
-                        response_len = strlen(response);
-                        send(client_fd, response, response_len, 0);
 
-                        free(response);
-                        free(file_name);
-                        free(auth_buffer);
-                        free(page_name_buffer);
-                        close(client_fd);
-                        return NULL;
+        //////////////////////////////////////////////////////
+        //TUTUTUTUTUTUTUTUT
+        //TU TRZEBA ZROBIĆ
+        //
+        //Jak obsługiwać bearer token
+        //
+        //Czy strona wymaga tokena:
+        //TAK:
+        //  Sprawdzamy czy jest token w requeście:
+        //  TAK:
+        //     Procesujemy i jeśli git to
+        //     Wysyłamy odpowiedź ze stroną
+        //  NIE:
+        //     Wysyłamy 401 z podanym sposobem autoryzacji
+        //    
+        //NIE:
+        //  Wysyłamy stronę
+        //
 
-                    }
 
-
-                }
-                else {
-                    snprintf(response, buffer_size,
+        if(file_info.zone_type != 0) {
+            //strona wymaga tokena
+            regcomp(&regex, "\r\nAuthorization: Bearer ([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+            if(regexec(&regex, buffer, 2, matches, 0) != 0) {
+                //strona wymaga tokena, a tokena nie ma
+                snprintf(response, buffer_size,
                     "HTTP/1.1 401 Unauthorized\r\n"
-                    "WWW-Authenticate: Basic realm=\"Global\""
+                    "WWW-Authenticate: Bearer realm=\"Global\""
                     );
 
-                    response_len = strlen(response);
-                    send(client_fd, response, response_len, 0);
-
-                    free(response);
-                    free(file_name);
-                    free(auth_buffer);
-                    free(page_name_buffer);
-                    close(client_fd);
-                    return NULL;
-
-                }
-
-            }
-            else {
-                
-                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
-                if(build_response_status == -1) {
-                    fprintf(stderr, "File stated in data base but could not be opened.\n");
-                }
-                
-
+                response_len = strlen(response);
                 send(client_fd, response, response_len, 0);
-            
+                
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                close(client_fd);
+                return NULL;
+                
             }
 
+            buffer[matches[1].rm_eo] = '\0';
 
+            char* auth_token = buffer + matches[1].rm_so;
+            auth_token[strcspn(auth_token, "\r\n")] = '\0';
+            //tutaj trzeba zrobić call do db albo struktury trzymającej tokeny
+            //na tej podstawie do tokenu przypiszemy login
+            //będzie potrzebny skrypt który co jakiś czas wyczyści bazę ze starych tokenów
 
+            //jesli się zgadza to po prostu wychodzi z ifa dalej
+            //jeśli nie to wysyła forbidden albo inny error w zależnośli od stanu tokena
 
-
-            
         }
-
-        free(response);
-        free(file_name);
-
         
+        //tu wchodzimy tylko jeśli nie jest wymagany token, albo jeśli jest wymagany i jest przesłany
+        //Jeśli go nie ma to funkcja zakończy sie wcześniej
+        int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+        if(build_response_status == -1) {
+            fprintf(stderr, "File stated in data base but could not be opened.\n");
+            free(response);
+            free(page_name_buffer);
+            free(file_name);
+            close(client_fd);
+            return NULL;
+        }
+        
+        send(client_fd, response, response_len, 0);
+        free(response);
+        free(page_name_buffer);
+        free(file_name);
+        close(client_fd);
+        return NULL;
     }
+
+
+    //obsługa logowania
+    else if(connection_type == 2) {
+        //trzeba wyciągnąć hasło i login
+        //porównać z bazą
+        //jesli działa to stworzyć i wysłać token
+        //przypisać login do tokenu
+        free(buffer);
+        close(client_fd);
+        return NULL;
+    }
+
+
+    //obsługa wylogowania
+    else if(connection_type == 3) {
+        free(buffer);
+        close(client_fd);
+        return NULL;
+    }
+
+    //nieznane requesty
+    else {
+        if(verbose) {
+            fprintf(stderr, "Unknown request, no data sent.\n");
+        }
+        close(client_fd);
+        free(buffer);
+        return NULL;
+    }
+    
+    
+
+
+
+    
     close(client_fd);
-
-
     return NULL;
 }
 

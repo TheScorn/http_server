@@ -1,7 +1,7 @@
 let serverVersionMajor = 0;
 let serverVersionMinor = 0;
 
-let authServerIP = "localhost";
+let authServerIP = "192.168.0.129";
 let authServerPort = "54003";
 
 function setServerVersionInfo() {

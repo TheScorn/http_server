@@ -6,8 +6,8 @@ let username = null;
 let user_email = null;
 
 //wersja serwera
-let serverVersionMajor = 0
-let serverVersionMinor = 0
+let serverVersionMajor = 0;
+let serverVersionMinor = 0;
 
 function setLoginInfo() {
     if(logged_in && username !== null && user_email !== null) {
@@ -22,6 +22,24 @@ function setLoginInfo() {
 
 function setServerVersionInfo() {
     document.getElementById("versionField").innerText = serverVersionMajor.toString() + "." + serverVersionMinor.toString();
+}
+
+function mainPageOnClick() {
+    window.location.href = "main_page.html";
+}
+
+function loginButtonOnClick() {
+    if(logged_in) {
+
+        window.location.href = "main_page.html";
+    } 
+    else {
+        window.location.href = "login_page.html";
+    }
+}
+
+function sendLogOut() {
+    return 0;
 }
 
 setLoginInfo();

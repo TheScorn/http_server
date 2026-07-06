@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" e>
     <head>
+        <link rel="stylesheet" type="text/css" href="login_page_style.css">
         <title>Login</title>
-        
-            <link rel="stylesheet" type="text/css" href="login_page_style.css">
-
-       
+        <meta charset="UTF-8">
     </head>
     
     <body style="background-color: gray;">
@@ -16,7 +14,7 @@
             </div>
 
             <div class="sub-top-bar">
-                <button id="buttonMainPage" class="sub-top-bar-button">Main Page</button>
+                <button id="buttonMainPage" class="sub-top-bar-button" onclick="mainPageOnClick()">Main Page</button>
                 <span id="paragraphLogintitle" class="login-title-paragraph">Login Form</span>
             </div>
 
@@ -25,13 +23,13 @@
                     <form id="loginForm" class="login-form">
                         <div id="usernameField" class="field">
                             <label>Login:</label>
-                            <input id="login" type="text" placeholder="Your login...">
+                            <input id="login" name="login" type="text" placeholder="Your login...">
                         </div>
                         <div id="passwordField" class="field">
                             <label>Password:</label>
-                            <input  id="password" type="password" placeholder="Your password...">
+                            <input  id="password" name="password" type="password" placeholder="Your password...">
                         </div>
-                        <button id="sendFormButton" class="send-form-button">Login</button>
+                        <a id="sendFormButton" class="send-form-button" href="login_page.html" onclick="sendLoginInfo(); return false">Login</a>
                     </form>
                 </div>
             </div>

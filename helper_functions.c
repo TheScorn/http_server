@@ -54,6 +54,9 @@ const char *get_mime_type(const char *file_ext) {
     else if(strcasecmp(file_ext, "css") == 0) {
         return "text/css";
     }
+    else if(strcasecmp(file_ext, "js") == 0) {
+        return "application/javascript";
+    }
     else if(strcasecmp(file_ext, "txt") == 0) {
         return "text/plain";
     }

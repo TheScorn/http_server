@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
     bool print_help = PRINT_HELP_DEFAULT;
     uint16_t selected_port = DEFAULT_PORT;
-    uint16_t auth_port = DEFAULT_AUTH_PORT;
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -58,30 +57,6 @@ int main(int argc, char **argv) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
     }
 
-    
-    //auth server con test
-    int auth_con_status = test_auth_con(auth_port);
-    if(auth_con_status == -1) {
-        fprintf(stderr, "Client socket for auth server connection could not be created.\n");
-        return -1;
-    }
-    else if(auth_con_status == -2) {
-        fprintf(stderr, "Connection to auth server failed.\n");
-        return -1;
-    }
-    else if(auth_con_status == -4) {
-        fprintf(stderr, "Test acknowledged message was incorrect.\n");
-        return -1;
-    }
-    else if(auth_con_status == -3) {
-        fprintf(stderr, "No bytes received from auth server.\n");
-        return -1;
-    }
-
-    
-    if(input_args.verbose_init) {
-        printf("Connection to authorization server successful.\n");
-    }
     
 
 

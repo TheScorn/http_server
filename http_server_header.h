@@ -63,7 +63,6 @@ char * get_password(char * authorization);
 
 int test_con();
 
-int test_auth_con(uint16_t auth_port);
 
 #endif
 
@@ -71,7 +70,6 @@ int test_auth_con(uint16_t auth_port);
 #define VERBOSE_INPUT_DEFAULT false
 #define PRINT_HELP_DEFAULT false
 #define DEFAULT_PORT 54001
-#define DEFAULT_AUTH_PORT 54003
 #define PAGES "./pages"
 #define DEFAULT_BUFFER_SIZE 104857600
 #define DB_HOST "localhost"

@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 #project name and version
-project(http_server VERSION 1.01)
+project(http_server VERSION 1.2)
 
 configure_file(http_server_header.h.in ${PROJECT_SOURCE_DIR}/http_server_header.h)
 

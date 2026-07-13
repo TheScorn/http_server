@@ -63,16 +63,15 @@ void *handle_client(void *arg) {
     }
 
     //////////////////////////sprawdzamy czy typ 2
-    regcomp(&regex, "^POST / HTTP/1.1*"
-            "Content-Disposition: form-data; name=\"login\"*"
-            "Content-Disposition: form-data; name=\"password\"*", REG_EXTENDED);
+    regcomp(&regex, "^POST[[:space:]]+/[[:space:]]+HTTP/1\.[01]\r?\n(.|\n)*Content-Type:[[:space:]]*multipart/form-data;[[:space:]]*boundary=([^\r\n]+)(.|\n)*name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
         connection_type = 2;
     }
 
+    
     //sprawdzanie czy typ 3
     //TODO
-    
+
 
     //Obsługa http request
     if(connection_type == 1) {
@@ -206,6 +205,36 @@ void *handle_client(void *arg) {
 
     //obsługa logowania
     else if(connection_type == 2) {
+
+        regmatch_t matches2[4];
+        char login[32];
+        char password[32];
+
+        regcomp(&regex, "form-data; name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
+
+        //czy jest sens sprawdzać ponownie poprawność - raczej nie, ale póki co zostaje
+
+        if(regexec(&regex, buffer, 4, matches2, 0) != 0) {
+            fprintf(stderr, "No login info found");
+        }
+
+        int len = matches2[1].rm_eo - matches2[1].rm_so;
+        strncpy(login, buffer + matches2[1].rm_so, len);
+        login[len] = '\0';
+
+        len =  matches2[3].rm_eo - matches2[3].rm_so;
+        strncpy(password, buffer + matches2[3].rm_so, len);
+        password[len] = '\0';
+
+        
+        //obsługa logowania
+
+        //sprawdzamy bazę danych
+        //jeśli użytkownik istnieje i hasło poprawne to tworzymy token
+        //stara funkcja nie działa bo trzeba od razu dopisać do użytkownika token
+
+        
+
         //trzeba wyciągnąć hasło i login
         //porównać z bazą
         //jesli działa to stworzyć i wysłać token

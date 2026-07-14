@@ -226,18 +226,20 @@ void *handle_client(void *arg) {
         strncpy(password, buffer + matches2[3].rm_so, len);
         password[len] = '\0';
 
-        
-        //obsługa logowania
-
+        //###
+        //obsługa logowania:
+        //#
         //check credentials
-
-        //sprawdzamy bazę danych
-        //jeśli użytkownik istnieje i hasło poprawne to tworzymy token
+        
+        //#
+        //generate token
         char* token = (char *)malloc(sizeof(char) * token_length);
         generate_token(token_length, token);
         token[token_length] = '\0';
         
-        
+
+        //tu trzeba zapisać token
+        free(token);
 
         //stara funkcja nie działa bo trzeba od razu dopisać do użytkownika token
 
@@ -248,6 +250,7 @@ void *handle_client(void *arg) {
         //jesli działa to stworzyć i wysłać token
         //przypisać login do tokenu
         free(buffer);
+        
         close(client_fd);
         return NULL;
     }

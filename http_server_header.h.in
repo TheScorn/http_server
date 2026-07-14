@@ -13,10 +13,12 @@ struct input_args_struct {
     bool verbose_init;
     bool print_help;
     uint16_t selected_port;
+    int token_length;
 };
 
 struct handle_args_struct {
     int * client_fd;
+    int token_length;
     bool verbose_init;
 };
 
@@ -63,6 +65,7 @@ char * get_password(char * authorization);
 
 int test_con();
 
+void generate_token(int length, char* token);
 
 #endif
 
@@ -76,3 +79,4 @@ int test_con();
 #define DB_USER "http_server"
 #define DB_PASSWORD "passwd"
 #define DB "HTTP_SERVER_INFO"
+#define DEFAULT_TOKEN_LENGTH 24

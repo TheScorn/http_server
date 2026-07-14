@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
     bool print_help = PRINT_HELP_DEFAULT;
     uint16_t selected_port = DEFAULT_PORT;
+    int token_length = DEFAULT_TOKEN_LENGTH;
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -34,9 +35,9 @@ int main(int argc, char **argv) {
     struct input_args_struct input_args;
     struct handle_args_struct handle_args;
     input_args.verbose_init = verbose_init;
-    
     input_args.print_help = print_help;
     input_args.selected_port = selected_port;
+    input_args.token_length = token_length;
 
     int handle_arg_ret = handle_arguments(argc, argv, &input_args);
     if(handle_arg_ret != 0) {
@@ -52,13 +53,16 @@ int main(int argc, char **argv) {
     printf("Http Server initializing\n");
 
     handle_args.verbose_init = input_args.verbose_init;
+    handle_args.token_length = input_args.token_length;
 
     if(input_args.verbose_init) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
     }
 
     
-
+    if(input_args.verbose_init) {
+        printf("Token length selected: %d\n", token_length);
+    }
 
 
     //db connection test

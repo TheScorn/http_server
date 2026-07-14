@@ -183,4 +183,24 @@ char *url_decode(const char *src) {
 }
 
 
+/**
+ * @brief Token generator
+ * 
+ * Function generates token of given length
+ * 
+ * @param length length of token generated
+ * 
+ * @param token address of the token
+ */
+void generate_token(int length, char* token) {
+    
+    char next;
+
+    for(int i = 0; i < length; i++) {
+        next = rand() % (122 + 1 - 48) + 48;
+        *(token + i) = next;
+    }
+    
+}
+
 

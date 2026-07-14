@@ -27,7 +27,7 @@ void *handle_client(void *arg) {
 
     int client_fd = *(args->client_fd);
     bool verbose = args->verbose_init;
-
+    int token_length = args->token_length;
     //trzeba zaimplementować sprawdzanie typu połączenia
     //rozbić tą funkcję na kilka mniejszych
     //0: NONE - nierozpoznane połączenie
@@ -63,7 +63,7 @@ void *handle_client(void *arg) {
     }
 
     //////////////////////////sprawdzamy czy typ 2
-    regcomp(&regex, "^POST[[:space:]]+/[[:space:]]+HTTP/1\.[01]\r?\n(.|\n)*Content-Type:[[:space:]]*multipart/form-data;[[:space:]]*boundary=([^\r\n]+)(.|\n)*name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
+    regcomp(&regex, "^POST[[:space:]]+/[[:space:]]+HTTP/1\\.[01]\r?\n(.|\n)*Content-Type:[[:space:]]*multipart/form-data;[[:space:]]*boundary=([^\r\n]+)(.|\n)*name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
         connection_type = 2;
     }
@@ -229,8 +229,16 @@ void *handle_client(void *arg) {
         
         //obsługa logowania
 
+        //check credentials
+
         //sprawdzamy bazę danych
         //jeśli użytkownik istnieje i hasło poprawne to tworzymy token
+        char* token = (char *)malloc(sizeof(char) * token_length);
+        generate_token(token_length, token);
+        token[token_length] = '\0';
+        
+        
+
         //stara funkcja nie działa bo trzeba od razu dopisać do użytkownika token
 
         

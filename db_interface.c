@@ -1,33 +1,27 @@
 #include "http_server_header.h"
 #include <strings.h>
-#include <mysql/mysql.h>
-
+#include "sqlite3.h"
 
 
 /**
  * @brief Function for testing db connection
  * 
- * Function tests if database is available and if the user and password are correct.
+ * Function tests if database is available. Checks if all tables are in place.
  * 
- * @return 0 if connection is successful, -1 if error occured during initializing of MYSQL object, -2 if connection was unsuccessful.
+ * @return 0 if connection is successful, 
  * 
  */
 int test_con() {
-    return 0;
-    MYSQL *conn = mysql_init(NULL); //init a mysql structure
-
-    if(!conn) {
+    
+    sqlite3 *db;
+    if(sqlite3_open("../Database/http_server.db", &db) != 0) {
+        //jeśli nie ma bazy danych
         return -1;
     }
 
-    if(!mysql_real_connect(conn, DB_HOST, DB_USER, DB_PASSWORD, DB, 0, NULL, 0)) {
-        return -2;
-    }
-
-    mysql_close(conn);
+    
 
     return 0;
-
 }
 
 
@@ -154,6 +148,20 @@ int get_client_info(char* name, char* password, struct client_info_struct* clien
 }
 
 
+/**
+ * @brief Simple function for authentication
+ * 
+ * Function establishes connection to database. Finds user with given login, compares passwords and returns integer depending on the outcome.
+ * 
+ * @param login pointer to char list with login
+ * 
+ * @param password pointer to char list with password
+ * 
+ * @return 0 if authentication correct, -1 if no user with given login found, -2 if password incorrect.
+ */
+int authenticate(char* login, char* password) {
+
+}
 
 
 

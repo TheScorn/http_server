@@ -29,6 +29,9 @@ set_target_properties(helper_functions PROPERTIES PUBLIC_HEADER http_server_head
 add_library(db_interface db_interface.c)
 set_target_properties(db_interface PROPERTIES PUBLIC_HEADER http_server_header)
 
+add_library(sqlite STATIC sqlite3.c)
+set_target_properties(sqlite PROPERTIES PUBLIC_HEADER sqlite3)
+set_target_properties(sqlite PROPERTIES LINKER_LANGUAGE C)
 
 #lib for base64 decode
 add_library(base64 base64.c)
@@ -36,4 +39,4 @@ set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64)
+target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite)

@@ -24,6 +24,8 @@ int main(int argc, char **argv) {
     bool print_help = PRINT_HELP_DEFAULT;
     uint16_t selected_port = DEFAULT_PORT;
     int token_length = DEFAULT_TOKEN_LENGTH;
+    //token lifespan in minues
+    int token_lifespan = DEFAULT_TOKEN_LIFESPAN;
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -38,6 +40,7 @@ int main(int argc, char **argv) {
     input_args.print_help = print_help;
     input_args.selected_port = selected_port;
     input_args.token_length = token_length;
+    input_args.token_lifespan = token_lifespan;
 
     int handle_arg_ret = handle_arguments(argc, argv, &input_args);
     if(handle_arg_ret != 0) {
@@ -54,6 +57,7 @@ int main(int argc, char **argv) {
 
     handle_args.verbose_init = input_args.verbose_init;
     handle_args.token_length = input_args.token_length;
+    handle_args.token_lifespan = input_args.token_lifespan;
 
     if(input_args.verbose_init) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
@@ -61,24 +65,25 @@ int main(int argc, char **argv) {
 
     
     if(input_args.verbose_init) {
-        printf("Token length selected: %d\n", token_length);
+        printf("Token length: %d\n", token_length);
     }
 
+    if(input_args.verbose_init) {
+        printf("Token lifespan: %d\n", token_lifespan);
+    }
 
     //db connection test
     int test_db_con = test_con();
     if(test_db_con == -1) {
-        fprintf(stderr, "MYSQL structure failed to initialize.\n");
+        fprintf(stderr, "No SQLite database found\n");
         return -1;
     }
-    else if(test_db_con == -2) {
-        fprintf(stderr, "Connection test to database failed.\n");
-        return -1;
-    }
+    
+    
 
     //connection successful
     if(input_args.verbose_init) {
-        printf("Connection to database successful.\n");
+        printf("Connection to database successful\n");
     }
     
 

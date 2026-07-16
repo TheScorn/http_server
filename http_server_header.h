@@ -14,12 +14,15 @@ struct input_args_struct {
     bool print_help;
     uint16_t selected_port;
     int token_length;
+    int token_lifespan;
 };
 
 struct handle_args_struct {
     int * client_fd;
     int token_length;
+    int token_lifespan;
     bool verbose_init;
+    
 };
 
 struct file_info_struct {
@@ -80,3 +83,4 @@ void generate_token(int length, char* token);
 #define DB_PASSWORD "passwd"
 #define DB "HTTP_SERVER_INFO"
 #define DEFAULT_TOKEN_LENGTH 24
+#define DEFAULT_TOKEN_LIFESPAN 30

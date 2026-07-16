@@ -28,6 +28,7 @@ void *handle_client(void *arg) {
     int client_fd = *(args->client_fd);
     bool verbose = args->verbose_init;
     int token_length = args->token_length;
+    int token_lifespan = args->token_lifespan;
     //trzeba zaimplementować sprawdzanie typu połączenia
     //rozbić tą funkcję na kilka mniejszych
     //0: NONE - nierozpoznane połączenie

@@ -70,6 +70,8 @@ int test_con();
 
 void generate_token(int length, char* token);
 
+int authenticate(char* login, char* password);
+
 #endif
 
 #define VERBOSE_INIT_DEFAULT false

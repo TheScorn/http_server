@@ -157,10 +157,53 @@ int get_client_info(char* name, char* password, struct client_info_struct* clien
  * 
  * @param password pointer to char list with password
  * 
- * @return 0 if authentication correct, -1 if no user with given login found, -2 if password incorrect.
+ * @return 0 if authentication correct, -1 if no database found, -2 if error occured during select execution, -3 if no user with given login found, -4 if password incorrect, -5 if execution failed.
  */
 int authenticate(char* login, char* password) {
+    sqlite3 *db;
+    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+        //jeśli nie ma bazy danych
+        return -1;
+    }
 
+    sqlite3_stmt *stmt; //statement sqlite3
+
+    char select_statement[100];
+
+    snprintf(select_statement, 100, "SELECT password FROM Users WHERE username = \"%s\";", login);
+
+
+    if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+        sqlite3_close(db);
+        return -2;
+    }
+
+    int sqlite_step = sqlite3_step(stmt);
+    if(sqlite_step == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -3;
+    }
+    else if(sqlite_step != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -5;
+    }
+    
+
+    const unsigned char* selected_password = (const unsigned char*)sqlite3_column_text(stmt, 0);
+    
+
+    if(strcasecmp(password, selected_password) != 0) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -4;
+    }
+    
+    //nie można finalizować stmt przed sprawdzeniem hasła bo wtedy zmienia się też selected_password
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return 0;
 }
 
 

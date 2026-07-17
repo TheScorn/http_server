@@ -203,7 +203,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //obsługa logowania
     else if(connection_type == 2) {
 
@@ -216,7 +216,10 @@ void *handle_client(void *arg) {
         //czy jest sens sprawdzać ponownie poprawność - raczej nie, ale póki co zostaje
 
         if(regexec(&regex, buffer, 4, matches2, 0) != 0) {
-            fprintf(stderr, "No login info found");
+            fprintf(stderr, "No login info found in message type 2.\n");
+            free(buffer);
+            close(client_fd);
+            return NULL;
         }
 
         int len = matches2[1].rm_eo - matches2[1].rm_so;
@@ -231,16 +234,61 @@ void *handle_client(void *arg) {
         //obsługa logowania:
         //#
         //check credentials
+        int authentication_status = authenticate(login, password);
+        if(authentication_status == -1) {
+            fprintf(stderr, "Error occured while opening database.\n");
+            free(buffer);
+            close(client_fd);
+            return NULL;
+
+        }
+        else if(authentication_status == -2) {
+            fprintf(stderr, "Error occured while executing SELECT query.\n");
+            free(buffer);
+            close(client_fd);
+            return NULL;
+        }
+        else if(authentication_status == -5) {
+            fprintf(stderr, "Execution failed.\n");
+            free(buffer);
+            close(client_fd);
+            return NULL;
+        }
+        else if(authentication_status == -3) {
+            printf("No user with given username found in db.\n");
+            //obsługa w przypadku braku użytkownika
+
+            //TODO
+
+
+            free(buffer);
+            close(client_fd);
+            return NULL;
+        }
         
-        //#
+        else if(authentication_status == -4) {
+            printf("Password incorrect.\n");
+            //obsługa w przypadku niepoprawnego hasła
+
+            //TODO
+
+            free(buffer);
+            close(client_fd);
+            return NULL;
+        }
+        //# Jeśli autentykacja poprawna
         //generate token
-        char* token = (char *)malloc(sizeof(char) * token_length);
+
+        printf("Password correct.\n");
+
+        char token[token_length];
         generate_token(token_length, token);
+        
         token[token_length] = '\0';
         
-
+        
         //tu trzeba zapisać token
-        free(token);
+        //free(token);
 
         //stara funkcja nie działa bo trzeba od razu dopisać do użytkownika token
 
@@ -256,7 +304,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //obsługa wylogowania
     else if(connection_type == 3) {
         free(buffer);
@@ -264,6 +312,7 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //nieznane requesty
     else {
         if(verbose) {

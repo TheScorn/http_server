@@ -1,5 +1,5 @@
 #define HTTP_SERVER_VERSION_MAJOR 1
-#define HTTP_SERVER_VERISON_MINOR 2
+#define HTTP_SERVER_VERISON_MINOR 3
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -69,6 +69,8 @@ char * get_password(char * authorization);
 int test_con();
 
 void generate_token(int length, char* token);
+
+int authenticate(char* login, char* password);
 
 #endif
 

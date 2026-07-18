@@ -1,7 +1,7 @@
 #include "http_server_header.h"
 #include <strings.h>
 #include "sqlite3.h"
-
+#include <time.h>
 
 /**
  * @brief Function for testing db connection
@@ -206,6 +206,42 @@ int authenticate(char* login, char* password) {
     return 0;
 }
 
+/**
+ * @brief Function for saving new token in db
+ * 
+ * Function saves generated token with corresponding username
+ * 
+ * @param token pointer to char list representing token
+ * 
+ * @param username pointer to char list representing username
+ * 
+ * @param expiry int representing time when token expires
+ * 
+ * @return 0 if execution successful, -1 if database could not be opened, -2 if query execution unsuccessful
+ */
+int save_token(char* token, char* username, time_t expiry) {
+    sqlite3* db;
+    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+        //jeśli nie ma bazy danych
+        return -1;
+    }
+
+    sqlite3_stmt *stmt; //statement sqlite3
+
+    char insert_statement[200];
+
+
+    snprintf(insert_statement, 200, "INSERT INTO Tokens (token, username, expiry) VALUES(\"%s\", \"%s\", %ld);", token, username, expiry);
+
+
+    if(sqlite3_exec(db, insert_statement, NULL, NULL, NULL) != 0) {
+
+        sqlite3_close(db);
+        return -2;
+    }
+
+    return 0;
+}
 
 
 //ORGANIZACJA BAZY PLIKÓW

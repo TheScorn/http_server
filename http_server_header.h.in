@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <time.h>
 
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
@@ -68,11 +69,24 @@ char * get_password(char * authorization);
 
 int test_con();
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void generate_token(int length, char* token);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 int authenticate(char* login, char* password);
 
-#endif
+int http_current_time(char* date);
+
+int save_token(char* token, char* username, time_t expiry);
+
+
 
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false
@@ -86,3 +100,5 @@ int authenticate(char* login, char* password);
 #define DB "HTTP_SERVER_INFO"
 #define DEFAULT_TOKEN_LENGTH 24
 #define DEFAULT_TOKEN_LIFESPAN 30
+
+#endif

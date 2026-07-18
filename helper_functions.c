@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdlib.h>
-
+#include <time.h>
 
 /**
  * @brief Function for finding file extensions
@@ -183,6 +183,9 @@ char *url_decode(const char *src) {
 }
 
 
+
+char charset[] = "0123456789abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ-._~+/";
+
 /**
  * @brief Token generator
  * 
@@ -194,13 +197,34 @@ char *url_decode(const char *src) {
  */
 void generate_token(int length, char* token) {
     
+    char next_ix;
     char next;
-
     for(int i = 0; i < length; i++) {
-        next = rand() % (122 + 1 - 48) + 48;
+        next_ix = rand() % (sizeof(charset) - 1);
+        next = charset[next_ix];
         *(token + i) = next;
     }
+    token[length] = '\0';
     
+}
+
+/**
+ * @brief HTTP Date
+ * 
+ * Function produces HTTP formated GMT date and time.
+ * 
+ * @param date address for the date
+ * 
+ * @return 0 if execution successful
+ */
+int http_current_time(char* date) {
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    
+    strftime(date, 50, "%a, %d %b %Y %H:%M:%S GMT", &tm);
+    return 0;
+
 }
 
 

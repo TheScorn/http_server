@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdlib.h>
-
+#include <time.h>
 
 /**
  * @brief Function handling http clients after connection is established
@@ -112,10 +112,15 @@ void *handle_client(void *arg) {
 
         //jeśli w bazie nie ma takiego pliku
         if(db_file_info_status < 0) {
+
+            char date[50];
+            http_current_time(date);
+
             snprintf(response, buffer_size,
             "HTTP/1.1 404 Not Found\r\n"
             "Content-Type: text/plain\r\n"
-            "404 Not Found");
+            "Date: %s\r\n"
+            "404 Not Found", date);
 
             response_len = strlen(response);
             
@@ -154,10 +159,14 @@ void *handle_client(void *arg) {
             regcomp(&regex, "\r\nAuthorization: Bearer ([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
             if(regexec(&regex, buffer, 2, matches, 0) != 0) {
                 //strona wymaga tokena, a tokena nie ma
+                char date[50];
+                http_current_time(date);
+
                 snprintf(response, buffer_size,
                     "HTTP/1.1 401 Unauthorized\r\n"
+                    "Date: %s\r\n"
                     "WWW-Authenticate: Bearer realm=\"Global\""
-                    );
+                    , date);
 
                 response_len = strlen(response);
                 send(client_fd, response, response_len, 0);
@@ -254,11 +263,19 @@ void *handle_client(void *arg) {
             close(client_fd);
             return NULL;
         }
-        else if(authentication_status == -3) {
-            printf("No user with given username found in db.\n");
-            //obsługa w przypadku braku użytkownika
+        else if(authentication_status == -3 || authentication_status == -4) {
+            
+            char date[50];
+            http_current_time(date);
 
-            //TODO
+            char response[150];
+
+            snprintf(response, 150, "HTTP/1.1 401 Unauthorized\r\nDate: %s\r\nWWW-Authenticate: Bearer realm=\"Global\"", date);
+            
+            size_t response_len = strlen(response);
+
+
+            send(client_fd, response, response_len, 0);
 
 
             free(buffer);
@@ -266,43 +283,63 @@ void *handle_client(void *arg) {
             return NULL;
         }
         
-        else if(authentication_status == -4) {
-            printf("Password incorrect.\n");
-            //obsługa w przypadku niepoprawnego hasła
-
-            //TODO
-
-            free(buffer);
-            close(client_fd);
-            return NULL;
-        }
+        
         //# Jeśli autentykacja poprawna
         //generate token
 
-        printf("Password correct.\n");
 
-        char token[token_length];
+        char token[token_length + 1];
         generate_token(token_length, token);
         
-        token[token_length] = '\0';
         
+        //moment wygaśnięcia tokenu
+        time_t expiry = time(NULL) + (60 * token_lifespan);
         
+        int save_token_status = save_token(token, login, expiry);
+        if(save_token_status == -1) {
+            fprintf(stderr, "Database could not be opened.\n");
+            close(client_fd);
+            free(buffer);
+            return NULL;
+        }
+        else if(save_token_status == -2) {
+            fprintf(stderr, "INSERT query execution unsuccessful.\n");
+            close(client_fd);
+            free(buffer);
+            return NULL;
+        }
+
+        char response[250];
+        char date[50];
+        http_current_time(date);
         //tu trzeba zapisać token
         //free(token);
+        snprintf(response, 250, "HTTP/1.1 200 OK\r\n"
+            "Content-Type: application/json;charset=UTF-8\r\n"
+            "Date: %s\r\n"
+            "Cache-Control: no-store\r\n"
+            "Pragma: no-cache\r\n\r\n"
+            "{\r\n"
+            "\"access_token\":\"%s\",\r\n"
+            "\"token_type\":\"Bearer\",\r\n"
+            "\"expires_in\":%d\r\n"
+            "}"
+            , date, token, token_lifespan * 60);
 
-        //stara funkcja nie działa bo trzeba od razu dopisać do użytkownika token
+        size_t response_len = strlen(response);
 
+            printf("%s\n", response);
+
+        send(client_fd, response, response_len, 0);
         
 
-        //trzeba wyciągnąć hasło i login
-        //porównać z bazą
-        //jesli działa to stworzyć i wysłać token
-        //przypisać login do tokenu
         free(buffer);
         
         close(client_fd);
         return NULL;
     }
+
+
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //obsługa wylogowania
@@ -311,6 +348,9 @@ void *handle_client(void *arg) {
         close(client_fd);
         return NULL;
     }
+
+
+
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //nieznane requesty

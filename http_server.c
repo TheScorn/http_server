@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     }
 
     if(input_args.verbose_init) {
-        printf("Token lifespan: %d\n", token_lifespan);
+        printf("Token lifespan: %d minutes\n", token_lifespan);
     }
 
     //db connection test

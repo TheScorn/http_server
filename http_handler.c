@@ -328,7 +328,7 @@ void *handle_client(void *arg) {
 
         size_t response_len = strlen(response);
 
-            printf("%s\n", response);
+        
 
         send(client_fd, response, response_len, 0);
         

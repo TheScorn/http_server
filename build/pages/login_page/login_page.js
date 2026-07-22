@@ -1,4 +1,4 @@
-let serverVersionMajor = 0;
+let serverVersionMajor = 0; //to i tak tzeba zrobić preprocessorem więc użytkownika i opcje zrobimy tak samo
 let serverVersionMinor = 0;
 
 
@@ -10,11 +10,18 @@ function mainPageOnClick() {
     window.location.href = "main_page.html";
 }
 
+function navigate(page) {
+    const token = localStorage.getItem("accessToken");
+    
+}
+
+function showLogiErrorText() {
+
+}
 
 const loginInfo = document.querySelector("#loginForm");
 
 async function sendLoginInfo() {
-    
     const loginInfoData = new FormData(loginInfo);
 
     try {
@@ -24,10 +31,25 @@ async function sendLoginInfo() {
 
         });
 
-        console.log(await response.json());
+        if(!response.ok) {
+            console.log("Login failed.");
+            //logika do pokazywania wiadomości o niepoprawnym loginie lub haśle.
+            return;
+        }
 
+        const data = await response.json();
+        console.log(data);
+
+        localStorage.setItem("accessToken", data.access_token);
+
+        console.log(localStorage.getItem("accessToken"));
+        
+        ////////////////////////////////////////////////////////////
+        //todo dynamiczny powrót do strony którą próbowano otworzyć
+        window.location.href = "main_page.html";
 
     } catch (e) {
+        
         console.error(e);
     }
     

@@ -10,10 +10,7 @@ function mainPageOnClick() {
     window.location.href = "main_page.html";
 }
 
-function navigate(page) {
-    const token = localStorage.getItem("accessToken");
-    
-}
+
 
 function showLogiErrorText() {
 
@@ -37,12 +34,8 @@ async function sendLoginInfo() {
             return;
         }
 
-        const data = await response.json();
-        console.log(data);
+        console.log("Logged in");
 
-        localStorage.setItem("accessToken", data.access_token);
-
-        console.log(localStorage.getItem("accessToken"));
         
         ////////////////////////////////////////////////////////////
         //todo dynamiczny powrót do strony którą próbowano otworzyć

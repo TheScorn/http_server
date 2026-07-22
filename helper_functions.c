@@ -195,7 +195,7 @@ char charset[] = "0123456789abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ-.
  * 
  * @param token address of the token
  */
-void generate_token(int length, char* token) {
+void generate_session_id(int length, char* token) {
     
     char next_ix;
     char next;

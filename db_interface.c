@@ -219,7 +219,7 @@ int authenticate(char* login, char* password) {
  * 
  * @return 0 if execution successful, -1 if database could not be opened, -2 if query execution unsuccessful
  */
-int save_token(char* token, char* username, time_t expiry) {
+int save_session_id(char* session_id, char* username, time_t expiry) {
     sqlite3* db;
     if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
         //jeśli nie ma bazy danych
@@ -231,7 +231,7 @@ int save_token(char* token, char* username, time_t expiry) {
     char insert_statement[200];
 
 
-    snprintf(insert_statement, 200, "INSERT INTO Tokens (token, username, expiry) VALUES(\"%s\", \"%s\", %ld);", token, username, expiry);
+    snprintf(insert_statement, 200, "INSERT INTO Sessions (session_id, username, expiry) VALUES(\"%s\", \"%s\", %ld);", session_id, username, expiry);
 
 
     if(sqlite3_exec(db, insert_statement, NULL, NULL, NULL) != 0) {

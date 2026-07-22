@@ -27,8 +27,8 @@ void *handle_client(void *arg) {
 
     int client_fd = *(args->client_fd);
     bool verbose = args->verbose_init;
-    int token_length = args->token_length;
-    int token_lifespan = args->token_lifespan;
+    int session_id_length = args->session_id_length;
+    int session_id_lifespan = args->session_id_lifespan;
     //trzeba zaimplementować sprawdzanie typu połączenia
     //rozbić tą funkcję na kilka mniejszych
     //0: NONE - nierozpoznane połączenie
@@ -155,17 +155,18 @@ void *handle_client(void *arg) {
 
 
         if(file_info.zone_type != 0) {
-            //strona wymaga tokena
-            regcomp(&regex, "\r\nAuthorization: Bearer ([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+            //strona wymaga ciasteczka
+            regcomp(&regex, "\r\nCookie: session=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
             if(regexec(&regex, buffer, 2, matches, 0) != 0) {
                 //strona wymaga tokena, a tokena nie ma
                 char date[50];
                 http_current_time(date);
 
+                //w podejściu ciasteczkowym używamy automatycznego przekierowania do strony logowania
                 snprintf(response, buffer_size,
-                    "HTTP/1.1 401 Unauthorized\r\n"
+                    "HTTP/1.1 302 Found\r\n"
                     "Date: %s\r\n"
-                    "WWW-Authenticate: Bearer realm=\"Global\""
+                    "Location: /login_page.html"
                     , date);
 
                 response_len = strlen(response);
@@ -181,8 +182,8 @@ void *handle_client(void *arg) {
 
             buffer[matches[1].rm_eo] = '\0';
 
-            char* auth_token = buffer + matches[1].rm_so;
-            auth_token[strcspn(auth_token, "\r\n")] = '\0';
+            char* session_id = buffer + matches[1].rm_so;
+            session_id[strcspn(session_id, "\r\n")] = '\0';
             //tutaj trzeba zrobić call do db albo struktury trzymającej tokeny
             //na tej podstawie do tokenu przypiszemy login
             //będzie potrzebny skrypt który co jakiś czas wyczyści bazę ze starych tokenów
@@ -270,7 +271,7 @@ void *handle_client(void *arg) {
 
             char response[150];
 
-            snprintf(response, 150, "HTTP/1.1 401 Unauthorized\r\nDate: %s\r\nWWW-Authenticate: Bearer realm=\"Global\"", date);
+            snprintf(response, 150, "HTTP/1.1 401 Unauthorized\r\nContent-Type: text/html\r\nDate: %s\r\n", date);
             
             size_t response_len = strlen(response);
 
@@ -288,14 +289,14 @@ void *handle_client(void *arg) {
         //generate token
 
 
-        char token[token_length + 1];
-        generate_token(token_length, token);
+        char session_id[session_id_length + 1];
+        generate_session_id(session_id_length, session_id);
         
         
         //moment wygaśnięcia tokenu
-        time_t expiry = time(NULL) + (60 * token_lifespan);
+        time_t expiry = time(NULL) + (60 * session_id_lifespan);
         
-        int save_token_status = save_token(token, login, expiry);
+        int save_token_status = save_session_id(session_id, login, expiry);
         if(save_token_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");
             close(client_fd);
@@ -317,14 +318,8 @@ void *handle_client(void *arg) {
         snprintf(response, 250, "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json;charset=UTF-8\r\n"
             "Date: %s\r\n"
-            "Cache-Control: no-store\r\n"
-            "Pragma: no-cache\r\n\r\n"
-            "{\r\n"
-            "\"access_token\":\"%s\",\r\n"
-            "\"token_type\":\"Bearer\",\r\n"
-            "\"expires_in\":%d\r\n"
-            "}"
-            , date, token, token_lifespan * 60);
+            "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d"
+            , date, session_id, session_id_lifespan * 60);
 
         size_t response_len = strlen(response);
 

@@ -14,14 +14,14 @@ struct input_args_struct {
     bool verbose_init;
     bool print_help;
     uint16_t selected_port;
-    int token_length;
-    int token_lifespan;
+    int session_id_length;
+    int session_id_lifespan;
 };
 
 struct handle_args_struct {
     int * client_fd;
-    int token_length;
-    int token_lifespan;
+    int session_id_length;
+    int session_id_lifespan;
     bool verbose_init;
     
 };
@@ -73,7 +73,7 @@ int test_con();
 extern "C" {
 #endif
 
-void generate_token(int length, char* token);
+void generate_session_id(int length, char* token);
 
 #ifdef __cplusplus
 }
@@ -84,7 +84,7 @@ int authenticate(char* login, char* password);
 
 int http_current_time(char* date);
 
-int save_token(char* token, char* username, time_t expiry);
+int save_session_id(char* session_id, char* username, time_t expiry);
 
 
 
@@ -98,7 +98,7 @@ int save_token(char* token, char* username, time_t expiry);
 #define DB_USER "http_server"
 #define DB_PASSWORD "passwd"
 #define DB "HTTP_SERVER_INFO"
-#define DEFAULT_TOKEN_LENGTH 24
-#define DEFAULT_TOKEN_LIFESPAN 30
+#define DEFAULT_SESSION_ID_LENGTH 24
+#define DEFAULT_SESSION_ID_LIFESPAN 30
 
 #endif

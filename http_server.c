@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
     bool print_help = PRINT_HELP_DEFAULT;
     uint16_t selected_port = DEFAULT_PORT;
-    int token_length = DEFAULT_TOKEN_LENGTH;
+    int session_id_length = DEFAULT_SESSION_ID_LENGTH;
     //token lifespan in minues
-    int token_lifespan = DEFAULT_TOKEN_LIFESPAN;
+    int session_id_lifespan = DEFAULT_SESSION_ID_LIFESPAN;
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
     input_args.verbose_init = verbose_init;
     input_args.print_help = print_help;
     input_args.selected_port = selected_port;
-    input_args.token_length = token_length;
-    input_args.token_lifespan = token_lifespan;
+    input_args.session_id_length = session_id_length;
+    input_args.session_id_lifespan = session_id_lifespan;
 
     int handle_arg_ret = handle_arguments(argc, argv, &input_args);
     if(handle_arg_ret != 0) {
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
     printf("Http Server initializing\n");
 
     handle_args.verbose_init = input_args.verbose_init;
-    handle_args.token_length = input_args.token_length;
-    handle_args.token_lifespan = input_args.token_lifespan;
+    handle_args.session_id_length = input_args.session_id_length;
+    handle_args.session_id_lifespan = input_args.session_id_lifespan;
 
     if(input_args.verbose_init) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
@@ -65,11 +65,11 @@ int main(int argc, char **argv) {
 
     
     if(input_args.verbose_init) {
-        printf("Token length: %d\n", token_length);
+        printf("SessionID length: %d\n", session_id_length);
     }
 
     if(input_args.verbose_init) {
-        printf("Token lifespan: %d minutes\n", token_lifespan);
+        printf("Session lifespan: %d minutes\n", session_id_lifespan);
     }
 
     //db connection test

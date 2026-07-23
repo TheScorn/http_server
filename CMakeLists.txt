@@ -33,10 +33,14 @@ add_library(sqlite STATIC sqlite3.c)
 set_target_properties(sqlite PROPERTIES PUBLIC_HEADER sqlite3)
 set_target_properties(sqlite PROPERTIES LINKER_LANGUAGE C)
 
+add_library(PPHP STATIC PPHP.c)
+set_target_properties(PPHP PROPERTIES PUBLIC_HEADER PPHP)
+set_target_properties(PPHP PROPERTIES LINKER_LANGUAGE C)
+
 #lib for base64 decode
 add_library(base64 base64.c)
 set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite)
+target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP)

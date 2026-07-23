@@ -109,7 +109,7 @@ void *handle_client(void *arg) {
 
         struct file_info_struct file_info; //struktura do przechowywania info o stronie
         int db_file_info_status = get_file_info(file_name, &file_info);
-        printf("%s %s %d %d\n", file_info.file_path, file_info.zone_name, file_info.zone_id, file_info.zone_type);
+        
         //jeśli w bazie nie ma takiego pliku
         if(db_file_info_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");
@@ -140,7 +140,18 @@ void *handle_client(void *arg) {
 
             response_len = strlen(response);
             
-            send(client_fd, response, response_len, 0);
+            size_t total = 0;
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response, response_len, 0);
+                if(n <= 0) {
+                    fprintf(stderr, "0 bytes sent. Breaking.\n");
+                    break;
+                }
+                total += n;
+            }
+
+
+            
             free(response);
             free(page_name_buffer);
             free(file_name);
@@ -187,7 +198,20 @@ void *handle_client(void *arg) {
                     , date);
 
                 response_len = strlen(response);
-                send(client_fd, response, response_len, 0);
+
+
+                size_t total = 0;
+                while(total < response_len) {
+                ssize_t n = send(client_fd, response, response_len, 0);
+                if(n <= 0) {
+                    fprintf(stderr, "0 bytes sent. Breaking.\n");
+                    break;
+                }
+                total += n;
+                }
+
+
+                
                 
                 free(file_info.file_path);
                 free(file_info.zone_name);
@@ -226,7 +250,21 @@ void *handle_client(void *arg) {
             return NULL;
         }
         
-        send(client_fd, response, response_len, 0);
+        //próba podejścia częściowych sendów
+        size_t total = 0;
+        while(total < response_len) {
+            ssize_t n = send(client_fd, response, response_len, 0);
+            if(n <= 0) {
+                fprintf(stderr, "0 bytes sent. Breaking.\n");
+                break;
+            }
+            total += n;
+        }
+
+        
+        
+        
+        
         free(file_info.file_path);
         free(file_info.zone_name);
         free(response);
@@ -298,8 +336,17 @@ void *handle_client(void *arg) {
             
             size_t response_len = strlen(response);
 
+            size_t total = 0;
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response, response_len, 0);
+                if(n <= 0) {
+                    fprintf(stderr, "0 bytes sent. Breaking.\n");
+                    break;
+                }
+                total += n;
+            }
+            
 
-            send(client_fd, response, response_len, 0);
 
 
             free(buffer);
@@ -346,9 +393,19 @@ void *handle_client(void *arg) {
 
         size_t response_len = strlen(response);
 
-        
+            
+        size_t total = 0;
+        while(total < response_len) {
+            ssize_t n = send(client_fd, response, response_len, 0);
+            if(n <= 0) {
+                fprintf(stderr, "0 bytes sent. Breaking.\n");
+                break;
+            }
+            total += n;
+        }
 
-        send(client_fd, response, response_len, 0);
+
+        
         
 
         free(buffer);

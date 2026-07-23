@@ -1,7 +1,9 @@
 #include "http_server_header.h"
 #include <strings.h>
+#include <string.h>
 #include "sqlite3.h"
 #include <time.h>
+#include <stdlib.h>
 
 /**
  * @brief Function for testing db connection
@@ -37,66 +39,50 @@ int test_con() {
  * 
  * @param page_info Struct to be updated by the function.
  * 
- * @return 0 if file was found, -1 if wasn't.
+ * @return 0 if file was found, -1 if no db found, -2 if select query unsuccessful, -3 if no file found.
  */
 int get_file_info(char *filename, struct file_info_struct* file_info) {
-    //trzeba będzie ogarnąć łączenie z bazą danych
-    //najepiej sprawdzać je w inicie i ewentualnie przerwać init
 
-
-    //teraz trochę oszukaństwo żeby nie kombinować ze złożonością póki nie mamy autoryzacji
-    if(strcasecmp(filename, "main_page.html\0") == 0) {
-        file_info->file_path = "main_page/main_page.html";
-        file_info->zone_id = 000;
-        file_info->zone_name = "Main";
-        file_info->zone_type = 0;
-        return 0;
-    }
-    else if(strcasecmp(filename, "main_page.js\0") == 0) {
-        file_info->file_path = "main_page/main_page.js";
-        file_info->zone_id = 000;
-        file_info->zone_name = "Main";
-        file_info->zone_type = 0;
-        return 0;
-    }
-    else if(strcasecmp(filename, "main_page_style.css\0") == 0) {
-        file_info->file_path = "main_page/main_page_style.css";
-        file_info->zone_id = 000;
-        file_info->zone_name = "Main";
-        file_info->zone_type = 0;
-        return 0;
-    }
-    if(strcasecmp(filename, "login_page.html\0") == 0) {
-        file_info->file_path = "login_page/login_page.html";
-        file_info->zone_id = 000;
-        file_info->zone_name = "Main";
-        file_info->zone_type = 0;
-        return 0;
-    }
-    else if(strcasecmp(filename, "login_page.js\0") == 0) {
-        file_info->file_path = "login_page/login_page.js";
-        file_info->zone_id = 000;
-        file_info->zone_name = "Main";
-        file_info->zone_type = 0;
-        return 0;
-    }
-    else if(strcasecmp(filename, "login_page_style.css\0") == 0) {
-        file_info->file_path = "login_page/login_page_style.css";
-        file_info->zone_id = 000;
-        file_info->zone_name = "Main";
-        file_info->zone_type = 0;
-        return 0;
+    sqlite3 *db;
+    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+        //jeśli nie ma bazy danych
+        return -1;
     }
 
-    else if(strcasecmp(filename, "restricted.html\0") == 0) {
-        file_info->file_path = "restricted/restricted.html";
-        file_info->zone_id = 0b100;
-        file_info->zone_name = "Restricted";
-        file_info->zone_type = 1;
-        return 0;
-    }
-    return -1;
+    sqlite3_stmt *stmt; //statement sqlite3
 
+    char select_statement[250];
+
+    snprintf(select_statement, 250, "SELECT Files.file_path, Files.zone_id, Zones.zone_name, Zones.zone_type FROM Files INNER JOIN Zones ON Zones.zone_id = Files.zone_id WHERE file_name = \"%s\";", filename);
+
+
+    if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+        sqlite3_close(db);
+        return -2;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_close(db);
+        sqlite3_finalize(stmt);
+        return -3;
+    }
+
+    const char *file_path = sqlite3_column_text(stmt, 0);
+    const char *zone_name = sqlite3_column_text(stmt, 2);
+
+    file_info->file_path = (char *)malloc((strlen(file_path) + 1) * sizeof(char));
+    file_info->zone_name = (char *)malloc((strlen(zone_name) + 1) * sizeof(char));
+
+    strcpy(file_info->file_path, (char *)file_path);
+    strcpy(file_info->zone_name, (char *)zone_name);
+    
+    
+
+    file_info->zone_id = sqlite3_column_int(stmt, 1);
+    file_info->zone_type = sqlite3_column_int(stmt, 3);
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return 0;
 }
 
 
@@ -207,11 +193,11 @@ int authenticate(char* login, char* password) {
 }
 
 /**
- * @brief Function for saving new token in db
+ * @brief Function for saving new session id in db
  * 
  * Function saves generated token with corresponding username
  * 
- * @param token pointer to char list representing token
+ * @param token pointer to char list representing session id
  * 
  * @param username pointer to char list representing username
  * 

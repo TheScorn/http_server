@@ -109,10 +109,26 @@ void *handle_client(void *arg) {
 
         struct file_info_struct file_info; //struktura do przechowywania info o stronie
         int db_file_info_status = get_file_info(file_name, &file_info);
-
+        printf("%s %s %d %d\n", file_info.file_path, file_info.zone_name, file_info.zone_id, file_info.zone_type);
         //jeśli w bazie nie ma takiego pliku
-        if(db_file_info_status < 0) {
-
+        if(db_file_info_status == -1) {
+            fprintf(stderr, "Database could not be opened.\n");
+            free(response);
+            free(page_name_buffer);
+            free(file_name);
+            close(client_fd);
+            return NULL;
+        }
+        else if(db_file_info_status == -2) {
+            fprintf(stderr, "Select query on Files unsuccessful.\n");
+            free(response);
+            free(page_name_buffer);
+            free(file_name);
+            close(client_fd);
+            return NULL;
+        }
+        else if(db_file_info_status == -3) {
+            
             char date[50];
             http_current_time(date);
 
@@ -131,6 +147,7 @@ void *handle_client(void *arg) {
             close(client_fd);
             return NULL;
         }
+
 
 
 
@@ -172,6 +189,8 @@ void *handle_client(void *arg) {
                 response_len = strlen(response);
                 send(client_fd, response, response_len, 0);
                 
+                free(file_info.file_path);
+                free(file_info.zone_name);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -198,6 +217,8 @@ void *handle_client(void *arg) {
         int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
         if(build_response_status == -1) {
             fprintf(stderr, "File stated in data base but could not be opened.\n");
+            free(file_info.file_path);
+            free(file_info.zone_name);
             free(response);
             free(page_name_buffer);
             free(file_name);
@@ -206,6 +227,8 @@ void *handle_client(void *arg) {
         }
         
         send(client_fd, response, response_len, 0);
+        free(file_info.file_path);
+        free(file_info.zone_name);
         free(response);
         free(page_name_buffer);
         free(file_name);

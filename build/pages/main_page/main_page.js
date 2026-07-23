@@ -38,6 +38,10 @@ function loginButtonOnClick() {
     }
 }
 
+function statusButtonOnClick() {
+    window.location.href = "status_page.html";
+}
+
 function sendLogOut() {
     return 0;
 }

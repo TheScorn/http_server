@@ -229,6 +229,32 @@ int save_session_id(char* session_id, char* username, time_t expiry) {
     return 0;
 }
 
+/**
+ * @brief Authorizing function
+ * 
+ * 
+ * 
+ * @param session_id pointer to char list containing sesion_id
+ * 
+ * @param client_info client info struct for retrieving username and his permissions
+ * 
+ * @return 
+ * 
+ */
+int authorize(char* session_id, struct client_info_struct* client_info) {
+    sqlite3* db;
+    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+        return -1;
+    }
+
+    sqlite3_stmt* stmt;
+
+    char select_statement[200];
+
+    
+
+}
+
 
 //ORGANIZACJA BAZY PLIKÓW
 

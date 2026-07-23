@@ -199,7 +199,9 @@ void generate_session_id(int length, char* token) {
     
     char next_ix;
     char next;
+    srand(time(0));
     for(int i = 0; i < length; i++) {
+        
         next_ix = rand() % (sizeof(charset) - 1);
         next = charset[next_ix];
         *(token + i) = next;

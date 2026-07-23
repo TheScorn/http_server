@@ -162,29 +162,10 @@ void *handle_client(void *arg) {
 
 
 
-        //////////////////////////////////////////////////////
-        //TUTUTUTUTUTUTUTUT
-        //TU TRZEBA ZROBIĆ
-        //
-        //Jak obsługiwać bearer token
-        //
-        //Czy strona wymaga tokena:
-        //TAK:
-        //  Sprawdzamy czy jest token w requeście:
-        //  TAK:
-        //     Procesujemy i jeśli git to
-        //     Wysyłamy odpowiedź ze stroną
-        //  NIE:
-        //     Wysyłamy 401 z podanym sposobem autoryzacji
-        //    
-        //NIE:
-        //  Wysyłamy stronę
-        //
-
-
         if(file_info.zone_type != 0) {
+            printf("%s", buffer);
             //strona wymaga ciasteczka
-            regcomp(&regex, "\r\nCookie: session=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+            regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
             if(regexec(&regex, buffer, 2, matches, 0) != 0) {
                 //strona wymaga tokena, a tokena nie ma
                 char date[50];
@@ -202,12 +183,12 @@ void *handle_client(void *arg) {
 
                 size_t total = 0;
                 while(total < response_len) {
-                ssize_t n = send(client_fd, response, response_len, 0);
-                if(n <= 0) {
-                    fprintf(stderr, "0 bytes sent. Breaking.\n");
-                    break;
-                }
-                total += n;
+                    ssize_t n = send(client_fd, response, response_len, 0);
+                    if(n <= 0) {
+                        fprintf(stderr, "0 bytes sent. Breaking.\n");
+                        break;
+                    }
+                    total += n;
                 }
 
 
@@ -227,12 +208,17 @@ void *handle_client(void *arg) {
 
             char* session_id = buffer + matches[1].rm_so;
             session_id[strcspn(session_id, "\r\n")] = '\0';
+
+
             //tutaj trzeba zrobić call do db albo struktury trzymającej tokeny
             //na tej podstawie do tokenu przypiszemy login
             //będzie potrzebny skrypt który co jakiś czas wyczyści bazę ze starych tokenów
 
             //jesli się zgadza to po prostu wychodzi z ifa dalej
             //jeśli nie to wysyła forbidden albo inny error w zależnośli od stanu tokena
+
+            printf("%s\n", session_id);
+
 
         }
         

@@ -238,7 +238,7 @@ int save_session_id(char* session_id, char* username, time_t expiry) {
  * 
  * @param client_info client info struct for retrieving username and his permissions
  * 
- * @return 
+ * @return 0 if authorization successful, -1 if database could not be opened, -2 if select query execution failed, -3 if givent session_id not found, -4 if token expired.
  * 
  */
 int authorize(char* session_id, struct client_info_struct* client_info) {
@@ -249,10 +249,44 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
 
     sqlite3_stmt* stmt;
 
-    char select_statement[200];
+    char select_statement[250];
 
-    
+    snprintf(select_statement, 250, "SELECT Sessions.username, Sessions.expiry, Users.access FROM Sessions INNER JOIN Users ON Sessions.username = Users.username WHERE session_id=\"%s\"", session_id);
 
+    if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+        sqlite3_close(db);
+        return -2;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_close(db);
+        sqlite3_finalize(stmt);
+        return -3;
+    }
+
+    //sprawdzanie czy token nie jest expired
+    int expiry = sqlite3_column_int(stmt, 1);
+
+    if(time(NULL) > expiry) {
+        sqlite3_close(db);
+        sqlite3_finalize(stmt);
+        return -4;
+    }
+
+
+
+    //zapisanie info o uzytkowniku
+    const char* name = sqlite3_column_text(stmt, 0);
+
+    client_info->name = (char *)malloc((strlen(name) + 1) * sizeof(char));
+
+    strcpy(client_info->name, (char *)name);
+
+    client_info->access_flags = sqlite3_column_int(stmt, 2);
+
+    sqlite3_close(db);
+    sqlite3_finalize(stmt);
+    return 0;
 }
 
 

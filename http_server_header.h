@@ -86,7 +86,7 @@ int http_current_time(char* date);
 
 int save_session_id(char* session_id, char* username, time_t expiry);
 
-
+int authorize(char* session_id, struct client_info_struct* client_info);
 
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false

@@ -110,7 +110,6 @@ void *handle_client(void *arg) {
         struct file_info_struct file_info; //struktura do przechowywania info o stronie
         int db_file_info_status = get_file_info(file_name, &file_info);
         
-        //jeśli w bazie nie ma takiego pliku
         if(db_file_info_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");
             free(response);
@@ -159,19 +158,18 @@ void *handle_client(void *arg) {
             return NULL;
         }
 
+        //jednak chcemy zawsze sprawdzać najpierw czy jest ciasteczko żeby móc dodać info o zalogowanym użytkowniku
+        //newet jeśli strona nie wymaga logowania
 
-
-
-        if(file_info.zone_type != 0) {
-            printf("%s", buffer);
-            //strona wymaga ciasteczka
-            regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
-            if(regexec(&regex, buffer, 2, matches, 0) != 0) {
-                //strona wymaga tokena, a tokena nie ma
+        regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+        if(regexec(&regex, buffer, 2, matches, 0) != 0) {
+            //jeśli nie ma ciasteczka
+            //sprawdzamy czy strona wymaga logowania
+            if(file_info.zone_type != 0) {
+                //jeśli nie ma ciesteczka a jest wymagane
                 char date[50];
                 http_current_time(date);
 
-                //w podejściu ciasteczkowym używamy automatycznego przekierowania do strony logowania
                 snprintf(response, buffer_size,
                     "HTTP/1.1 302 Found\r\n"
                     "Date: %s\r\n"
@@ -179,7 +177,6 @@ void *handle_client(void *arg) {
                     , date);
 
                 response_len = strlen(response);
-
 
                 size_t total = 0;
                 while(total < response_len) {
@@ -201,63 +198,239 @@ void *handle_client(void *arg) {
                 free(file_name);
                 close(client_fd);
                 return NULL;
-                
+
+            }
+            else {
+                //jeśli logowanie nie jest wymagane
+
+
+                //no user config
+                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+                if(build_response_status == -1) {
+                    fprintf(stderr, "File stated in data base but could not be opened.\n");
+                    free(file_info.file_path);
+                    free(file_info.zone_name);
+                    free(response);
+                    free(page_name_buffer);
+                    free(file_name);
+                    close(client_fd);
+                    return NULL;
+                }
+
+                size_t total = 0;
+                while(total < response_len) {
+                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
+                    if(n <= 0) {
+                        fprintf(stderr, "0 bytes sent. Breaking.\n");
+                        break;
+                    }
+                    total += n;
+                }
+
+        
+        
+        
+        
+                free(file_info.file_path);
+                free(file_info.zone_name);
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                close(client_fd);
+                return NULL;
+
+
             }
 
+
+        }
+        else {
+            //jeśli jest ciasteczko
+            //sprawdzamy info o użytkowniku
             buffer[matches[1].rm_eo] = '\0';
 
             char* session_id = buffer + matches[1].rm_so;
             session_id[strcspn(session_id, "\r\n")] = '\0';
 
+            int authorize_status = authorize(session_id, &client_info);
+            if(authorize_status == -1) {
 
-            //tutaj trzeba zrobić call do db albo struktury trzymającej tokeny
-            //na tej podstawie do tokenu przypiszemy login
-            //będzie potrzebny skrypt który co jakiś czas wyczyści bazę ze starych tokenów
-
-            //jesli się zgadza to po prostu wychodzi z ifa dalej
-            //jeśli nie to wysyła forbidden albo inny error w zależnośli od stanu tokena
-
-            printf("%s\n", session_id);
-
-
-        }
-        
-        //tu wchodzimy tylko jeśli nie jest wymagany token, albo jeśli jest wymagany i jest przesłany
-        //Jeśli go nie ma to funkcja zakończy sie wcześniej
-        int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
-        if(build_response_status == -1) {
-            fprintf(stderr, "File stated in data base but could not be opened.\n");
-            free(file_info.file_path);
-            free(file_info.zone_name);
-            free(response);
-            free(page_name_buffer);
-            free(file_name);
-            close(client_fd);
-            return NULL;
-        }
-        
-        //próba podejścia częściowych sendów
-        size_t total = 0;
-        while(total < response_len) {
-            ssize_t n = send(client_fd, response, response_len, 0);
-            if(n <= 0) {
-                fprintf(stderr, "0 bytes sent. Breaking.\n");
-                break;
             }
-            total += n;
+            
+            if(db_file_info_status == -1) {
+                fprintf(stderr, "Database could not be opened.\n");
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                free(file_info.file_path);
+                free(file_info.zone_name);
+                close(client_fd);
+                return NULL;
+            }
+            else if(db_file_info_status == -2) {
+                fprintf(stderr, "Select query on Files unsuccessful.\n");
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                free(file_info.file_path);
+                free(file_info.zone_name);
+                close(client_fd);
+                return NULL;
+            }
+            else if(db_file_info_status == -3 || db_file_info_status == -4) {
+                //jeśli tokena nie ma w bazie lub jeśli jest expired
+                //wysyłamy redirect do logowania oraz czyścimy nieprawidłowe ciastko
+                //potem można pomyśleć o rozdzieleniu tego na dwa przypadki
+                //póki nie ma mechanizmu usuwania sessionId to nie ma sensu
+                char date[50];
+                http_current_time(date);
+
+                snprintf(response, buffer_size,
+                    "HTTP/1.1 302 Found\r\n"
+                    "Date: %s\r\n"
+                    "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly"
+                    "Location: /login_page.html"
+                    , date);
+
+                response_len = strlen(response);
+                
+                send(client_fd, response, response_len, 0);
+
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                free(file_info.file_path);
+                free(file_info.zone_name);
+                close(client_fd);
+                return NULL;
+
+            }
+
+
+            client_info.logged_in = true;
+            
+
+            
+            //jeśli strona jest typu 0
+            if(file_info.zone_type == 0) {
+                //nie musimy sprawdzać praw użytkownika do strony
+                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+                if(build_response_status == -1) {
+                    fprintf(stderr, "File stated in data base but could not be opened.\n");
+                    free(file_info.file_path);
+                    free(file_info.zone_name);
+                    free(client_info.name);
+                    free(response);
+                    free(page_name_buffer);
+                    free(file_name);
+                    close(client_fd);
+                    return NULL;
+                }
+                
+                //Użytkownik zalogowany więc można użyć PHP z użytkownikiem
+
+                size_t total = 0;
+                while(total < response_len) {
+                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
+                    if(n <= 0) {
+                        fprintf(stderr, "0 bytes sent. Breaking.\n");
+                        break;
+                    }
+                    total += n;
+                }
+
+                free(file_info.file_path);
+                free(file_info.zone_name);
+                free(client_info.name);
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                close(client_fd);
+                return NULL;
+
+
+            }
+            else if(file_info.zone_type == 1) {
+                if(file_info.zone_id & client_info.access_flags == 0) {
+                    //user nie ma praw do strony
+                    char date[50];
+                    http_current_time(date);
+
+                    snprintf(response, buffer_size,
+                    "HTTP/1.1 403 Forbidden\r\n"
+                    "Date: %s\r\n"
+                    "Content-Type: text/html"
+                    , date);
+
+                    response_len = strlen(response);
+
+                    size_t total = 0;
+                    while(total < response_len) {
+                        ssize_t n = send(client_fd, response, response_len, 0);
+                        if(n <= 0) {
+                            fprintf(stderr, "0 bytes sent. Breaking.\n");
+                            break;
+                        }
+                        total += n;
+                    }
+
+                    free(file_info.file_path);
+                    free(file_info.zone_name);
+                    free(client_info.name);
+                    free(response);
+                    free(page_name_buffer);
+                    free(file_name);
+                    close(client_fd);
+                    return NULL;
+
+                }
+
+                //jeśli ma to tak samo jak wcześniej
+                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+                if(build_response_status == -1) {
+                    fprintf(stderr, "File stated in data base but could not be opened.\n");
+                    free(file_info.file_path);
+                    free(file_info.zone_name);
+                    free(client_info.name);
+                    free(response);
+                    free(page_name_buffer);
+                    free(file_name);
+                    close(client_fd);
+                    return NULL;
+                }
+                
+                //Użytkownik zalogowany więc można użyć PHP z użytkownikiem
+
+                size_t total = 0;
+                while(total < response_len) {
+                    ssize_t n = send(client_fd, response, response_len, 0);
+                    if(n <= 0) {
+                        fprintf(stderr, "0 bytes sent. Breaking.\n");
+                        break;
+                    }
+                    total += n;
+                }
+
+                free(file_info.file_path);
+                free(file_info.zone_name);
+                free(client_info.name);
+                free(response);
+                free(page_name_buffer);
+                free(file_name);
+                close(client_fd);
+                return NULL;
+
+
+
+            }
+            else {
+                //zone_type 2 (póki co nie ma takiej strony to na później)
+            }
+            
+
+
         }
 
-        
-        
-        
-        
-        free(file_info.file_path);
-        free(file_info.zone_name);
-        free(response);
-        free(page_name_buffer);
-        free(file_name);
-        close(client_fd);
-        return NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

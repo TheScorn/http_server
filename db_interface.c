@@ -4,6 +4,7 @@
 #include "sqlite3.h"
 #include <time.h>
 #include <stdlib.h>
+#define DB_PATH "/home/thescorn/science/mine/home_server/http_server/Database/http_server.db"
 
 /**
  * @brief Function for testing db connection
@@ -62,16 +63,14 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
     }
 
     if(sqlite3_step(stmt) != SQLITE_ROW) {
-        sqlite3_close(db);
         sqlite3_finalize(stmt);
+        sqlite3_close(db);
         return -3;
     }
 
     const char *file_path = sqlite3_column_text(stmt, 0);
     const char *zone_name = sqlite3_column_text(stmt, 2);
 
-    file_info->file_path = (char *)malloc((strlen(file_path) + 1) * sizeof(char));
-    file_info->zone_name = (char *)malloc((strlen(zone_name) + 1) * sizeof(char));
 
     strcpy(file_info->file_path, (char *)file_path);
     strcpy(file_info->zone_name, (char *)zone_name);
@@ -87,51 +86,6 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
 
 
 
-/**
- * @brief Function for acquiring and checking user info
- * 
- * Function retrieves users password, email and access flags.
- * Checks password validity and logs user by changing field "logged_in" to True.
- * 
- * @param name char list containing username
- * 
- * @param password char list containing password to be validated
- * 
- * @param client_info_struct structure containing client info to be updated
- * 
- * @return 0 if username is in database and password is correct, -1 if user does not appear in database, -2 if password is incorrect.
- * 
- */
-int get_client_info(char* name, char* password, struct client_info_struct* client_info) {
-    //To Do (db connection)
-
-
-
-    //zwraca 0 jeśli logowanie poprawne
-
-    //zwraca -1 jeśli nie ma użytkownika w bazie
-
-    //zwraca -2 jeśli hasło niepoprawne
-
-    if(strcasecmp(name, "admin") == 0) {
-        if(strcasecmp(password, "passwd") == 0) {
-            client_info->name = name;
-            client_info->password = password;
-            client_info->email = "mucha446@gmail.com";
-            client_info->access_flags = 0b111;
-            client_info->logged_in = true;
-            return 0;
-        }
-        else {
-            return -2;
-        }
-    }
-    else {
-        return -1;    
-    }
-
-
-}
 
 
 /**
@@ -259,8 +213,8 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
     }
 
     if(sqlite3_step(stmt) != SQLITE_ROW) {
-        sqlite3_close(db);
         sqlite3_finalize(stmt);
+        sqlite3_close(db);
         return -3;
     }
 
@@ -268,8 +222,8 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
     int expiry = sqlite3_column_int(stmt, 1);
 
     if(time(NULL) > expiry) {
-        sqlite3_close(db);
         sqlite3_finalize(stmt);
+        sqlite3_close(db);
         return -4;
     }
 
@@ -278,17 +232,39 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
     //zapisanie info o uzytkowniku
     const char* name = sqlite3_column_text(stmt, 0);
 
-    client_info->name = (char *)malloc((strlen(name) + 1) * sizeof(char));
 
     strcpy(client_info->name, (char *)name);
 
     client_info->access_flags = sqlite3_column_int(stmt, 2);
 
-    sqlite3_close(db);
     sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    
     return 0;
 }
 
+
+/**
+ * @brief function for dropping all sessions stored
+ * 
+ * Function connects to database and drops all records from "Sessions". 
+ * Usecase - closing the server
+ * 
+ * @return 0 if execution successful, -1 if database could not be opened, -2 if statement execution unsuccessful.
+ * 
+ */
+int drop_all_sessions() {
+    sqlite3* db;
+    if(sqlite3_open("../Database/http_server.db", &db) != 0) {
+        return -1;
+    }
+
+    sqlite3_exec(db, "DELETE FROM Sessions;", NULL, NULL, NULL);
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+    
+    return 0;
+
+}
 
 //ORGANIZACJA BAZY PLIKÓW
 

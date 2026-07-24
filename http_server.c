@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
 static void sig_handler(int _) {
     (void)_;
     close(serverSocket);
-    printf("\nSocket closed\n");
+    printf("\nSocket closed.\n");
     printf("Http Server shutting down.\n");
     exit(0);
 }

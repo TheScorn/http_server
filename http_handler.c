@@ -78,8 +78,8 @@ void *handle_client(void *arg) {
     if(connection_type == 1) {
         struct client_info_struct client_info;
         client_info.logged_in = false;
-        client_info.name = "default";
-        client_info.password = "default";
+        strncpy(client_info.name, "default", 30);
+        strncpy(client_info.password, "default", 30);
         client_info.access_flags = 0;
 
 
@@ -191,8 +191,8 @@ void *handle_client(void *arg) {
 
                 
                 
-                free(file_info.file_path);
-                free(file_info.zone_name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -208,8 +208,8 @@ void *handle_client(void *arg) {
                 int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
-                    free(file_info.file_path);
-                    free(file_info.zone_name);
+                    //free(file_info.file_path);
+                    //free(file_info.zone_name);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -231,8 +231,8 @@ void *handle_client(void *arg) {
         
         
         
-                free(file_info.file_path);
-                free(file_info.zone_name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -262,8 +262,8 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
-                free(file_info.file_path);
-                free(file_info.zone_name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
                 close(client_fd);
                 return NULL;
             }
@@ -272,8 +272,8 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
-                free(file_info.file_path);
-                free(file_info.zone_name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
                 close(client_fd);
                 return NULL;
             }
@@ -299,8 +299,8 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
-                free(file_info.file_path);
-                free(file_info.zone_name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
                 close(client_fd);
                 return NULL;
 
@@ -317,9 +317,9 @@ void *handle_client(void *arg) {
                 int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
-                    free(file_info.file_path);
-                    free(file_info.zone_name);
-                    free(client_info.name);
+                    //free(file_info.file_path);
+                    //free(file_info.zone_name);
+                    //free(client_info.name);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -339,9 +339,9 @@ void *handle_client(void *arg) {
                     total += n;
                 }
 
-                free(file_info.file_path);
-                free(file_info.zone_name);
-                free(client_info.name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
+                //free(client_info.name);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -374,9 +374,9 @@ void *handle_client(void *arg) {
                         total += n;
                     }
 
-                    free(file_info.file_path);
-                    free(file_info.zone_name);
-                    free(client_info.name);
+                    //free(file_info.file_path);
+                    //free(file_info.zone_name);
+                    //free(client_info.name);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -389,9 +389,9 @@ void *handle_client(void *arg) {
                 int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
-                    free(file_info.file_path);
-                    free(file_info.zone_name);
-                    free(client_info.name);
+                    //free(file_info.file_path);
+                    //free(file_info.zone_name);
+                    //free(client_info.name);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -411,9 +411,9 @@ void *handle_client(void *arg) {
                     total += n;
                 }
 
-                free(file_info.file_path);
-                free(file_info.zone_name);
-                free(client_info.name);
+                //free(file_info.file_path);
+                //free(file_info.zone_name);
+                //free(client_info.name);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);

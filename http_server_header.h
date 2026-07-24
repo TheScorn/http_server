@@ -27,17 +27,17 @@ struct handle_args_struct {
 };
 
 struct file_info_struct {
-    char* file_path;
+    char file_path[30];
     int zone_id;
-    char* zone_name;
+    char zone_name[30];
     int zone_type;
 };
 
 struct client_info_struct {
     bool logged_in;
-    char* name;
-    char* email;
-    char* password;
+    char name[30];
+    char email[40];
+    char password[30];
     int access_flags;
 };
 
@@ -87,6 +87,8 @@ int http_current_time(char* date);
 int save_session_id(char* session_id, char* username, time_t expiry);
 
 int authorize(char* session_id, struct client_info_struct* client_info);
+
+int drop_all_sessions();
 
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false

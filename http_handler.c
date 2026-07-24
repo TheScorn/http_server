@@ -22,13 +22,18 @@
  */
 void *handle_client(void *arg) {
     
+  
     chdir(PAGES);
     struct handle_args_struct* args = arg;
+  
 
-    int client_fd = *(args->client_fd);
+    int client_fd = args->client_fd;
     bool verbose = args->verbose_init;
     int session_id_length = args->session_id_length;
     int session_id_lifespan = args->session_id_lifespan;
+    
+
+    free(args);
     //trzeba zaimplementować sprawdzanie typu połączenia
     //rozbić tą funkcję na kilka mniejszych
     //0: NONE - nierozpoznane połączenie
@@ -107,14 +112,19 @@ void *handle_client(void *arg) {
         char* response = (char *)malloc(buffer_size * 2 * sizeof(char));
         size_t response_len = strlen(response);
 
-        struct file_info_struct file_info; //struktura do przechowywania info o stronie
-        int db_file_info_status = get_file_info(file_name, &file_info);
+
+
+        //struct file_info_struct file_info; //struktura do przechowywania info o stronie
+        struct file_info_struct* file_info = (struct file_info_struct*)malloc(sizeof(struct file_info_struct));
+        int db_file_info_status = get_file_info(file_name, file_info);
         
+
         if(db_file_info_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");
             free(response);
             free(page_name_buffer);
             free(file_name);
+            free(file_info);
             close(client_fd);
             return NULL;
         }
@@ -123,6 +133,7 @@ void *handle_client(void *arg) {
             free(response);
             free(page_name_buffer);
             free(file_name);
+            free(file_info);
             close(client_fd);
             return NULL;
         }
@@ -154,6 +165,7 @@ void *handle_client(void *arg) {
             free(response);
             free(page_name_buffer);
             free(file_name);
+            free(file_info);
             close(client_fd);
             return NULL;
         }
@@ -165,7 +177,7 @@ void *handle_client(void *arg) {
         if(regexec(&regex, buffer, 2, matches, 0) != 0) {
             //jeśli nie ma ciasteczka
             //sprawdzamy czy strona wymaga logowania
-            if(file_info.zone_type != 0) {
+            if(file_info->zone_type != 0) {
                 //jeśli nie ma ciesteczka a jest wymagane
                 char date[50];
                 http_current_time(date);
@@ -196,6 +208,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
+                free(file_info);
                 close(client_fd);
                 return NULL;
 
@@ -205,7 +218,8 @@ void *handle_client(void *arg) {
 
 
                 //no user config
-                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+                
+                int build_response_status = build_http_response(file_info->file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
                     //free(file_info.file_path);
@@ -213,6 +227,7 @@ void *handle_client(void *arg) {
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
+                    free(file_info);
                     close(client_fd);
                     return NULL;
                 }
@@ -236,6 +251,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
+                free(file_info);
                 close(client_fd);
                 return NULL;
 
@@ -262,8 +278,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
-                //free(file_info.file_path);
-                //free(file_info.zone_name);
+                free(file_info);
                 close(client_fd);
                 return NULL;
             }
@@ -272,8 +287,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
-                //free(file_info.file_path);
-                //free(file_info.zone_name);
+                free(file_info);
                 close(client_fd);
                 return NULL;
             }
@@ -299,8 +313,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
-                //free(file_info.file_path);
-                //free(file_info.zone_name);
+                free(file_info);
                 close(client_fd);
                 return NULL;
 
@@ -312,14 +325,13 @@ void *handle_client(void *arg) {
 
             
             //jeśli strona jest typu 0
-            if(file_info.zone_type == 0) {
+            if(file_info->zone_type == 0) {
                 //nie musimy sprawdzać praw użytkownika do strony
-                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+                
+                int build_response_status = build_http_response(file_info->file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
-                    //free(file_info.file_path);
-                    //free(file_info.zone_name);
-                    //free(client_info.name);
+                    free(file_info);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -339,9 +351,7 @@ void *handle_client(void *arg) {
                     total += n;
                 }
 
-                //free(file_info.file_path);
-                //free(file_info.zone_name);
-                //free(client_info.name);
+                free(file_info);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -350,8 +360,8 @@ void *handle_client(void *arg) {
 
 
             }
-            else if(file_info.zone_type == 1) {
-                if(file_info.zone_id & client_info.access_flags == 0) {
+            else if(file_info->zone_type == 1) {
+                if(file_info->zone_id & client_info.access_flags == 0) {
                     //user nie ma praw do strony
                     char date[50];
                     http_current_time(date);
@@ -374,9 +384,7 @@ void *handle_client(void *arg) {
                         total += n;
                     }
 
-                    //free(file_info.file_path);
-                    //free(file_info.zone_name);
-                    //free(client_info.name);
+                    free(file_info);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -386,12 +394,12 @@ void *handle_client(void *arg) {
                 }
 
                 //jeśli ma to tak samo jak wcześniej
-                int build_response_status = build_http_response(file_info.file_path, file_ext, response, &response_len, buffer_size);
+                printf("%s\n", file_info->file_path);
+                int build_response_status = build_http_response(file_info->file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
-                    //free(file_info.file_path);
-                    //free(file_info.zone_name);
-                    //free(client_info.name);
+
+                    free(file_info);
                     free(response);
                     free(page_name_buffer);
                     free(file_name);
@@ -411,12 +419,10 @@ void *handle_client(void *arg) {
                     total += n;
                 }
 
-                //free(file_info.file_path);
-                //free(file_info.zone_name);
-                //free(client_info.name);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
+                free(file_info);
                 close(client_fd);
                 return NULL;
 

@@ -18,7 +18,7 @@ static void sig_handler(int _);
 int main(int argc, char **argv) {
     
     
-    
+    bool run = true;
     bool verbose_init = VERBOSE_INIT_DEFAULT;
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
     bool print_help = PRINT_HELP_DEFAULT;
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
     //struktura argumentów do przekazania do funkcji obsługującej zapytania
     struct input_args_struct input_args;
-    struct handle_args_struct handle_args;
+    //struct handle_args_struct handle_args;
     input_args.verbose_init = verbose_init;
     input_args.print_help = print_help;
     input_args.selected_port = selected_port;
@@ -55,9 +55,11 @@ int main(int argc, char **argv) {
 
     printf("Http Server initializing\n");
 
-    handle_args.verbose_init = input_args.verbose_init;
-    handle_args.session_id_length = input_args.session_id_length;
-    handle_args.session_id_lifespan = input_args.session_id_lifespan;
+
+    
+    //handle_args.verbose_init = input_args.verbose_init;
+    //handle_args.session_id_length = input_args.session_id_length;
+    //handle_args.session_id_lifespan = input_args.session_id_lifespan;
 
     if(input_args.verbose_init) {
         printf("Version: %d.%d\n", HTTP_SERVER_VERSION_MAJOR, HTTP_SERVER_VERISON_MINOR);
@@ -134,27 +136,40 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, sig_handler);
     //handle
-    while(true) {
+    while(run) {
 
         struct sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
-        int *client_fd = (int *)malloc(sizeof(int));
-
+        int* client_fd = (int*)malloc(sizeof(int));
+        //int client_fd;
         if((*client_fd = accept(serverSocket, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
             fprintf(stderr, "Accept failed.\n");
             continue;
         }
 
+        struct handle_args_struct* handle_args = (struct handle_args_struct*)malloc(sizeof(struct handle_args_struct));
+        if(handle_args == NULL) {
+            fprintf(stderr, "No memory allocated for handle_args_struct");
+            continue;
+        }
 
-        
+        memcpy(&(handle_args->client_fd), client_fd, sizeof(int));
+        memcpy(&(handle_args->session_id_length), &(input_args.session_id_length), sizeof(int));
+        memcpy(&(handle_args->session_id_lifespan), &(input_args.session_id_lifespan), sizeof(int));
+        memcpy(&(handle_args->verbose_init), &(input_args.verbose_init), sizeof(bool));
 
         pthread_t thread_id;
 
         
-        handle_args.client_fd = client_fd;
-        pthread_create(&thread_id, NULL, handle_client, (void *)&handle_args); //było wcześniej (void *)client_fd
+        //handle_args.client_fd = client_fd;
+        
+        //handle_args.client_fd = (int*)malloc(sizeof(int));
+        //memcpy(handle_args.client_fd, client_fd, sizeof(int));
+        
+        pthread_create(&thread_id, NULL, handle_client, (void *)handle_args); //było wcześniej (void *)client_fd
         pthread_detach(thread_id);
-
+        free(client_fd); //zwalniamy tą pamięć a tą ze structu zwolnimy w wątku
+        
     }
 
 

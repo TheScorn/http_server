@@ -19,7 +19,7 @@ struct input_args_struct {
 };
 
 struct handle_args_struct {
-    int * client_fd;
+    int client_fd;
     int session_id_length;
     int session_id_lifespan;
     bool verbose_init;
@@ -27,7 +27,7 @@ struct handle_args_struct {
 };
 
 struct file_info_struct {
-    char file_path[30];
+    char file_path[100];
     int zone_id;
     char zone_name[30];
     int zone_type;

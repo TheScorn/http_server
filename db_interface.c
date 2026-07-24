@@ -70,15 +70,15 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
 
     const char *file_path = sqlite3_column_text(stmt, 0);
     const char *zone_name = sqlite3_column_text(stmt, 2);
-
+    const int zone_id = sqlite3_column_int(stmt, 1);
+    const int zone_type = sqlite3_column_int(stmt, 3);
 
     strcpy(file_info->file_path, (char *)file_path);
     strcpy(file_info->zone_name, (char *)zone_name);
-    
+    memcpy(&(file_info->zone_id), &zone_id, sizeof(int));
+    memcpy(&(file_info->zone_type), &zone_type, sizeof(int));
     
 
-    file_info->zone_id = sqlite3_column_int(stmt, 1);
-    file_info->zone_type = sqlite3_column_int(stmt, 3);
     sqlite3_finalize(stmt);
     sqlite3_close(db);
     return 0;

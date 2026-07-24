@@ -83,6 +83,7 @@ void *handle_client(void *arg) {
     if(connection_type == 1) {
         struct client_info_struct client_info;
         client_info.logged_in = false;
+        client_info.access_flags = 0;
         strncpy(client_info.name, "default", 30);
         strncpy(client_info.password, "default", 30);
         client_info.access_flags = 0;
@@ -261,8 +262,9 @@ void *handle_client(void *arg) {
 
         }
         else {
-            //jeśli jest ciasteczko
-            //sprawdzamy info o użytkowniku
+            //jeśli mamy ciasteczko
+
+
             buffer[matches[1].rm_eo] = '\0';
 
             char* session_id = buffer + matches[1].rm_so;
@@ -270,10 +272,6 @@ void *handle_client(void *arg) {
 
             int authorize_status = authorize(session_id, &client_info);
             if(authorize_status == -1) {
-
-            }
-            
-            if(db_file_info_status == -1) {
                 fprintf(stderr, "Database could not be opened.\n");
                 free(response);
                 free(page_name_buffer);
@@ -282,8 +280,8 @@ void *handle_client(void *arg) {
                 close(client_fd);
                 return NULL;
             }
-            else if(db_file_info_status == -2) {
-                fprintf(stderr, "Select query on Files unsuccessful.\n");
+            else if(authorize_status == -2) {
+                fprintf(stderr, "Select query on Sessions unsuccessful.\n");
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -291,7 +289,7 @@ void *handle_client(void *arg) {
                 close(client_fd);
                 return NULL;
             }
-            else if(db_file_info_status == -3 || db_file_info_status == -4) {
+            else if(authorize_status == -3 || authorize_status == -4) {
                 //jeśli tokena nie ma w bazie lub jeśli jest expired
                 //wysyłamy redirect do logowania oraz czyścimy nieprawidłowe ciastko
                 //potem można pomyśleć o rozdzieleniu tego na dwa przypadki
@@ -318,7 +316,6 @@ void *handle_client(void *arg) {
                 return NULL;
 
             }
-
 
             client_info.logged_in = true;
             
@@ -394,7 +391,6 @@ void *handle_client(void *arg) {
                 }
 
                 //jeśli ma to tak samo jak wcześniej
-                printf("%s\n", file_info->file_path);
                 int build_response_status = build_http_response(file_info->file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");

@@ -17,7 +17,7 @@
 int test_con() {
     
     sqlite3 *db;
-    if(sqlite3_open("../Database/http_server.db", &db) != 0) {
+    if(sqlite3_open(DB_PATH, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -45,7 +45,7 @@ int test_con() {
 int get_file_info(char *filename, struct file_info_struct* file_info) {
 
     sqlite3 *db;
-    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+    if(sqlite3_open(DB_PATH, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -101,7 +101,7 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
  */
 int authenticate(char* login, char* password) {
     sqlite3 *db;
-    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+    if(sqlite3_open(DB_PATH, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -161,12 +161,11 @@ int authenticate(char* login, char* password) {
  */
 int save_session_id(char* session_id, char* username, time_t expiry) {
     sqlite3* db;
-    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+    if(sqlite3_open(DB_PATH, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
 
-    sqlite3_stmt *stmt; //statement sqlite3
 
     char insert_statement[200];
 
@@ -180,6 +179,7 @@ int save_session_id(char* session_id, char* username, time_t expiry) {
         return -2;
     }
 
+    sqlite3_close(db);
     return 0;
 }
 
@@ -197,7 +197,7 @@ int save_session_id(char* session_id, char* username, time_t expiry) {
  */
 int authorize(char* session_id, struct client_info_struct* client_info) {
     sqlite3* db;
-    if(sqlite3_open("../../Database/http_server.db", &db) != 0) {
+    if(sqlite3_open(DB_PATH, &db) != 0) {
         return -1;
     }
 
@@ -255,13 +255,14 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
  */
 int drop_all_sessions() {
     sqlite3* db;
-    if(sqlite3_open("../Database/http_server.db", &db) != 0) {
+    if(sqlite3_open(DB_PATH, &db) != 0) {
         return -1;
     }
 
     sqlite3_exec(db, "DELETE FROM Sessions;", NULL, NULL, NULL);
     sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
     
+    sqlite3_close(db);
     return 0;
 
 }

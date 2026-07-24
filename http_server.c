@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "http_server_header.h"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,14 +13,16 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <errno.h>
 
+static volatile sig_atomic_t run;
 static volatile int serverSocket;
 static void sig_handler(int _);
 
 int main(int argc, char **argv) {
     
     
-    bool run = true;
+    run = true;
     bool verbose_init = VERBOSE_INIT_DEFAULT;
     bool verbose_input = VERBOSE_INPUT_DEFAULT;
     bool print_help = PRINT_HELP_DEFAULT;
@@ -131,10 +135,19 @@ int main(int argc, char **argv) {
     }
 
 
-    
+    /////////////////////////////////////////////////////////////
+    //signal handler
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+
+    sa.sa_handler = sig_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    sigaction(SIGINT, &sa, NULL);
 
 
-    signal(SIGINT, sig_handler);
+    //signal(SIGINT, sig_handler);
     //handle
     while(run) {
 
@@ -143,6 +156,10 @@ int main(int argc, char **argv) {
         int* client_fd = (int*)malloc(sizeof(int));
         //int client_fd;
         if((*client_fd = accept(serverSocket, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
+            if(errno == EINTR && !run) {
+                free(client_fd);
+                break;
+            }
             fprintf(stderr, "Accept failed.\n");
             continue;
         }
@@ -150,7 +167,8 @@ int main(int argc, char **argv) {
         struct handle_args_struct* handle_args = (struct handle_args_struct*)malloc(sizeof(struct handle_args_struct));
         if(handle_args == NULL) {
             fprintf(stderr, "No memory allocated for handle_args_struct");
-            continue;
+            free(client_fd);
+            break;
         }
 
         memcpy(&(handle_args->client_fd), client_fd, sizeof(int));
@@ -172,9 +190,18 @@ int main(int argc, char **argv) {
         
     }
 
+    
+
 
     close(serverSocket);
-    printf("Socket closed\n");
+    printf("\nSocket closed\n");
+    int drop_all_status = drop_all_sessions();
+    if(drop_all_status == -1) {
+        fprintf(stderr, "Warning! Database could not be opened - sessions were not dropped.\n");
+    }
+    else {
+        printf("Sessions dropped.\n");
+    }
     printf("http server shutting down.\n");
 
 }
@@ -183,8 +210,5 @@ int main(int argc, char **argv) {
 
 static void sig_handler(int _) {
     (void)_;
-    close(serverSocket);
-    printf("\nSocket closed.\n");
-    printf("Http Server shutting down.\n");
-    exit(0);
+    run = false;
 }

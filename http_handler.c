@@ -1,4 +1,5 @@
 #include "http_server_header.h"
+#include "PPHP.h"
 #include <string.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -84,7 +85,7 @@ void *handle_client(void *arg) {
         struct client_info_struct client_info;
         client_info.logged_in = false;
         client_info.access_flags = 0;
-        strncpy(client_info.name, "default", 30);
+        strncpy(client_info.name, "null", 30);
         strncpy(client_info.password, "default", 30);
         client_info.access_flags = 0;
 
@@ -232,10 +233,32 @@ void *handle_client(void *arg) {
                     close(client_fd);
                     return NULL;
                 }
+                response_len = strlen(response);
+                response[response_len + 1] = '\0';
+                ///////////////////////////////////////////////////////////////////
+                //logika do uzupełniania
+                //budujemy słownik ze zmiennych
+                char keys[MAX_NUMBER_OF_PAGE_VAR][20] = {"version_major","version_minor","logged_in","username"};
+                char vals[MAX_NUMBER_OF_PAGE_VAR][30];
+                char version_major[4];
+                char version_minor[4];
+                char logged_in[2];
+                snprintf(version_major, 4, "%d", HTTP_SERVER_VERSION_MAJOR);
+                snprintf(version_minor, 4, "%d", HTTP_SERVER_VERISON_MINOR);
+                snprintf(logged_in, 2, "%d", (int)client_info.logged_in);
+                memcpy(vals[0], version_major, strlen(version_major) + 1);
+                memcpy(vals[1], version_minor, strlen(version_minor) + 1);
+                memcpy(vals[2], logged_in, 2);
+                memcpy(vals[3], "null", 5);
+
+                char* complete_response = (char*)calloc(response_len + 1, 1);
+                int PPHP_status = PPHP_key_val_insert(complete_response, response_len + 1, response, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
+
+                response_len = strlen(complete_response);
 
                 size_t total = 0;
                 while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
+                    ssize_t n = send(client_fd, complete_response + total, response_len - total, 0);
                     if(n <= 0) {
                         fprintf(stderr, "0 bytes sent. Breaking.\n");
                         break;
@@ -250,6 +273,7 @@ void *handle_client(void *arg) {
                 //free(file_info.file_path);
                 //free(file_info.zone_name);
                 free(response);
+                free(complete_response);
                 free(page_name_buffer);
                 free(file_name);
                 free(file_info);
@@ -336,11 +360,33 @@ void *handle_client(void *arg) {
                     return NULL;
                 }
                 
+                response_len = strlen(response);
+                response[response_len + 1] = '\0';
                 //Użytkownik zalogowany więc można użyć PHP z użytkownikiem
+
+                char keys[MAX_NUMBER_OF_PAGE_VAR][20] = {"version_major","version_minor","logged_in","username"};
+                char vals[MAX_NUMBER_OF_PAGE_VAR][30];
+                char version_major[4];
+                char version_minor[4];
+                char logged_in[2];
+                char username[33];
+                snprintf(version_major, 4, "%d", HTTP_SERVER_VERSION_MAJOR);
+                snprintf(version_minor, 4, "%d", HTTP_SERVER_VERISON_MINOR);
+                snprintf(logged_in, 2, "%d", (int)client_info.logged_in);
+                snprintf(username, 33, "\"%s\"", client_info.name);
+                memcpy(vals[0], version_major, strlen(version_major)+ 1);
+                memcpy(vals[1], version_minor, strlen(version_minor)+ 1);
+                memcpy(vals[2], logged_in, 2);
+                memcpy(vals[3], username, strlen(username) + 1);
+
+                char* complete_response = (char*)malloc(response_len + 1);
+                int PPHP_status = PPHP_key_val_insert(complete_response, response_len + 1, response, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
+
+                response_len = strlen(complete_response);
 
                 size_t total = 0;
                 while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
+                    ssize_t n = send(client_fd, complete_response + total, response_len - total, 0);
                     if(n <= 0) {
                         fprintf(stderr, "0 bytes sent. Breaking.\n");
                         break;
@@ -349,6 +395,7 @@ void *handle_client(void *arg) {
                 }
 
                 free(file_info);
+                free(complete_response);
                 free(response);
                 free(page_name_buffer);
                 free(file_name);
@@ -403,11 +450,34 @@ void *handle_client(void *arg) {
                     return NULL;
                 }
                 
+                response_len = strlen(response);
+                response[response_len + 1] = '\0';
+
                 //Użytkownik zalogowany więc można użyć PHP z użytkownikiem
+                char keys[MAX_NUMBER_OF_PAGE_VAR][20] = {"version_major","version_minor","logged_in","username"};
+                char vals[MAX_NUMBER_OF_PAGE_VAR][30];
+                char version_major[4];
+                char version_minor[4];
+                char logged_in[2];
+                char username[33];
+                snprintf(username, 33, "\"%s\"", client_info.name);
+                snprintf(version_major, 4, "%d", HTTP_SERVER_VERSION_MAJOR);
+                snprintf(version_minor, 4, "%d", HTTP_SERVER_VERISON_MINOR);
+                snprintf(logged_in, 2, "%d", (int)client_info.logged_in);
+                memcpy(vals[0], version_major, strlen(version_major) + 1);
+                memcpy(vals[1], version_minor, strlen(version_minor)+ 1);
+                memcpy(vals[2], logged_in, 2);
+                memcpy(vals[3], username, strlen(username) + 1);
+
+                char* complete_response = (char*)malloc(response_len + 1);
+                int PPHP_status = PPHP_key_val_insert(complete_response, response_len + 1, response, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
+
+                response_len = strlen(complete_response);
+
 
                 size_t total = 0;
                 while(total < response_len) {
-                    ssize_t n = send(client_fd, response, response_len, 0);
+                    ssize_t n = send(client_fd, complete_response, response_len, 0);
                     if(n <= 0) {
                         fprintf(stderr, "0 bytes sent. Breaking.\n");
                         break;
@@ -416,6 +486,7 @@ void *handle_client(void *arg) {
                 }
 
                 free(response);
+                free(complete_response);
                 free(page_name_buffer);
                 free(file_name);
                 free(file_info);

@@ -102,5 +102,6 @@ int drop_all_sessions();
 #define DB "HTTP_SERVER_INFO"
 #define DEFAULT_SESSION_ID_LENGTH 24
 #define DEFAULT_SESSION_ID_LIFESPAN 30
+#define MAX_NUMBER_OF_PAGE_VAR 10
 
 #endif

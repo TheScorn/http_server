@@ -1,13 +1,13 @@
 
 //info o użytkowniku
-let logged_in = false;
+let logged_in = <<logged_in>>;
 
-let username = null;
+let username = <<username>>;
 let user_email = null;
 
 //wersja serwera
-let serverVersionMajor = 0;
-let serverVersionMinor = 0;
+let serverVersionMajor = <<version_major>>;
+let serverVersionMinor = <<version_minor>>;
 
 
 function setServerVersionInfo() {

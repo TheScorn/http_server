@@ -1,5 +1,5 @@
-let serverVersionMajor = 0; //to i tak tzeba zrobić preprocessorem więc użytkownika i opcje zrobimy tak samo
-let serverVersionMinor = 0;
+let serverVersionMajor = <<version_major>>; 
+let serverVersionMinor = <<version_minor>>;
 
 
 function setServerVersionInfo() {

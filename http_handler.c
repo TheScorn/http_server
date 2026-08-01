@@ -617,12 +617,12 @@ void *handle_client(void *arg) {
             return NULL;
         }
 
-        char response[250];
+        char response[200 + session_id_length];
         char date[50];
         http_current_time(date);
         //tu trzeba zapisać token
         //free(token);
-        snprintf(response, 250, "HTTP/1.1 200 OK\r\n"
+        snprintf(response, 200 + session_id_length, "HTTP/1.1 200 OK\r\n"
             "Content-Type: application/json;charset=UTF-8\r\n"
             "Date: %s\r\n"
             "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d"

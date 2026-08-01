@@ -23,13 +23,7 @@ int main(int argc, char **argv) {
     
     
     run = true;
-    bool verbose_init = VERBOSE_INIT_DEFAULT;
-    bool verbose_input = VERBOSE_INPUT_DEFAULT;
-    bool print_help = PRINT_HELP_DEFAULT;
-    uint16_t selected_port = DEFAULT_PORT;
-    int session_id_length = DEFAULT_SESSION_ID_LENGTH;
-    //token lifespan in minues
-    int session_id_lifespan = DEFAULT_SESSION_ID_LIFESPAN;
+    
     //obsługa argumentów funkcji main
     //zmiana portu
     //zmiana trybu
@@ -39,12 +33,11 @@ int main(int argc, char **argv) {
 
     //struktura argumentów do przekazania do funkcji obsługującej zapytania
     struct input_args_struct input_args;
-    //struct handle_args_struct handle_args;
-    input_args.verbose_init = verbose_init;
-    input_args.print_help = print_help;
-    input_args.selected_port = selected_port;
-    input_args.session_id_length = session_id_length;
-    input_args.session_id_lifespan = session_id_lifespan;
+    input_args.verbose_init = VERBOSE_INIT_DEFAULT;
+    input_args.print_help = false;
+    input_args.selected_port = DEFAULT_PORT;
+    input_args.session_id_length = DEFAULT_SESSION_ID_LENGTH;
+    input_args.session_id_lifespan = DEFAULT_SESSION_ID_LIFESPAN;
 
     int handle_arg_ret = handle_arguments(argc, argv, &input_args);
     if(handle_arg_ret != 0) {
@@ -71,11 +64,11 @@ int main(int argc, char **argv) {
 
     
     if(input_args.verbose_init) {
-        printf("SessionID length: %d\n", session_id_length);
+        printf("SessionID length: %d\n", input_args.session_id_length);
     }
 
     if(input_args.verbose_init) {
-        printf("Session lifespan: %d minutes\n", session_id_lifespan);
+        printf("Session lifespan: %d minutes\n", input_args.session_id_lifespan);
     }
 
     //db connection test

@@ -94,7 +94,6 @@ int drop_session(char* sesion_id);
 
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false
-#define PRINT_HELP_DEFAULT false
 #define DEFAULT_PORT 54001
 #define PAGES "./pages"
 #define DEFAULT_BUFFER_SIZE 104857600

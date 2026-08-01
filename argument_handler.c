@@ -1,6 +1,11 @@
 #include "http_server_header.h"
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
+#include <ctype.h>
+
+
+int verify_int(char* int_str);
 
 /**
  * @brief Function that handles arguments givent to main()
@@ -20,62 +25,94 @@
  */
 int handle_arguments(int argc, char **argv, struct input_args_struct *args) {
 
-    int ret = 0;
-
 
     //jeśli liczba argumentów < 2 to podany jest tylko main i wychodzimy stąd
     if(argc == 1) {
-        return ret;
+        return 0;
     }
 
-    
-    if(argc == 2){
-        if(strcmp(argv[1], "-h") == 0) {
+
+    for(int i = 1; i < argc; i++) {
+        if(strcasecmp(argv[i], "-h") == 0) {
             args->print_help = true;
+            return 0;
         }
-
-        else if(strcmp(argv[1], "-v") == 0) {
+        else if(strcasecmp(argv[i], "-v") == 0) {
             args->verbose_init = true;
         }
+        else if(strcasecmp(argv[i], "-p") == 0) {
+            
+            if(i + 1 >= argc) {
+                args->print_help = true;
+                return -1;
+            }
 
-        else {
-            ret = -1;
+            if(verify_int(argv[i + 1]) != 0) {
+                args->print_help = true;
+                return -1;
+            }
+
+            args->selected_port = atoi(argv[i + 1]);
+            i++;
         }
+        else if(strcasecmp(argv[i], "-sidLn") == 0) {
+            
+            if(i + 1 >= argc) {
+                args->print_help = true;
+                return -1;
+            }
+
+            if(verify_int(argv[i + 1]) != 0) {
+                args->print_help = true;
+                return -1;
+            }
+
+            args->session_id_length = atoi(argv[i + 1]);
+            i++;
+
+        }
+        else if(strcasecmp(argv[i], "-sidLfs") == 0) {
+
+            if(i + 1 >= argc) {
+                args->print_help = true;
+                return -1;
+            }
+
+            if(verify_int(argv[i + 1]) != 0) {
+                args->print_help = true;
+                return -1;
+            }
+
+            args->session_id_lifespan = atoi(argv[i + 1]);
+            i++;
+        }
+
 
     }
 
-    if(argc == 3) {
-        if(strcmp(argv[1], "-p") == 0) {
-            args->selected_port = atoi(argv[2]);
-        }
-        else {
-            ret = -2;
-        }
+    return 0;
 
+
+}
+
+
+/**
+ * @brief Simple function fo checking if str value can be represented by an int
+ * 
+ * @param int_str char pointer supposedly representing string
+ * 
+ * @return 0 if str can be represented by int, -1 if not.
+ * 
+ */
+int verify_int(char* int_str) {
+    int i = 0;
+    size_t len = strlen(int_str);
+
+    while(i < len) {
+        if(!isdigit(*(int_str + i))) {
+            return -1;
+        }
+        ++i;
     }
-
-
-    if(argc == 4) {
-        if(strcmp(argv[1], "-v") == 0 && strcmp(argv[2], "-p") == 0) {
-            args->verbose_init = true;
-            args->selected_port = atoi(argv[3]);
-        }
-
-        else if(strcmp(argv[3], "-v") == 0 && strcmp(argv[1], "-p") == 0) {
-            args->verbose_init = true;
-            args->selected_port = atoi(argv[2]);
-        }
-
-        else {
-            ret = -3;
-        }
-
-    }
-
-    if(argc > 4) {
-        ret = -4;
-    }
-
-
-    return ret;
+    return 0;
 }

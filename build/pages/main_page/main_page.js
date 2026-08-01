@@ -28,10 +28,18 @@ function mainPageOnClick() {
     window.location.href = "main_page.html";
 }
 
-function loginButtonOnClick() {
+async function loginButtonOnClick() {
     if(logged_in) {
+        try {
+            const response = await fetch("/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+            window.location.href = "main_page.html";
 
-        window.location.href = "main_page.html";
+        } catch(e) {
+            console.error(e);
+        }
     } 
     else {
         window.location.href = "login_page.html";
@@ -42,8 +50,21 @@ function statusButtonOnClick() {
     window.location.href = "status_page.html";
 }
 
-function sendLogOut() {
-    return 0;
+async function sendLogOut() {
+    try {
+        const response = await fetch("/logout", {
+        method: "POST",
+        credentials: "include"    
+        });
+
+        
+
+    } catch(e) {
+        console.error(e);
+    }
+
+    
+    
 }
 
 setLoginInfo();

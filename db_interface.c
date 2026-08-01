@@ -267,6 +267,45 @@ int drop_all_sessions() {
 
 }
 
+
+/**
+ * @brief Function for dropping specific session
+ * 
+ * Function drops session selected by session_id from database.
+ * 
+ * @param session_id char pointer to null-terminated string containing session id
+ * 
+ * @return 0 if execution succesful, -1 if database could not be opened, -2 if statement execution unsuccessful, -3 if no row deleted, -4 if more then one row deleted.
+ */
+int drop_session(char* sesion_id) {
+    sqlite3* db;
+    if(sqlite3_open(DB_PATH, &db) != 0) {
+        return -1;
+    }
+
+    char statement[300];
+    snprintf(statement, 300, "DELETE FROM Sessions WHERE session_id = \"%s\";", sesion_id);
+
+    if(sqlite3_exec(db, statement, NULL, NULL, NULL) != SQLITE_OK) {
+        sqlite3_close(db);
+        return -2;
+    };
+    int changes = sqlite3_changes(db);
+    if(changes == 0) {
+        sqlite3_close(db);
+        return -3;
+    }
+    else if(changes > 1) {
+        sqlite3_close(db);
+        return -4;
+    }
+    sqlite3_exec(db, "COMMI;", NULL, NULL, NULL);
+
+    sqlite3_close(db);
+    return 0;
+}
+
+
 //ORGANIZACJA BAZY PLIKÓW
 
 //TABELA Z PLIKAMI

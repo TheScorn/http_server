@@ -1,5 +1,5 @@
 #define HTTP_SERVER_VERSION_MAJOR 1
-#define HTTP_SERVER_VERISON_MINOR 5
+#define HTTP_SERVER_VERISON_MINOR 6
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -89,6 +89,8 @@ int save_session_id(char* session_id, char* username, time_t expiry);
 int authorize(char* session_id, struct client_info_struct* client_info);
 
 int drop_all_sessions();
+
+int drop_session(char* sesion_id);
 
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false

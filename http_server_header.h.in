@@ -90,6 +90,8 @@ int authorize(char* session_id, struct client_info_struct* client_info);
 
 int drop_all_sessions();
 
+int drop_session(char* sesion_id);
+
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false
 #define PRINT_HELP_DEFAULT false

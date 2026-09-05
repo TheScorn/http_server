@@ -58,6 +58,7 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
 
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+        sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -2;
     }
@@ -114,6 +115,7 @@ int authenticate(char* login, char* password) {
 
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+        sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -2;
     }

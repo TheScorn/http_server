@@ -86,7 +86,7 @@ int handle_arguments(int argc, char **argv, struct input_args_struct *args) {
             args->session_id_lifespan = atoi(argv[i + 1]);
             i++;
         }
-
+        
 
     }
 

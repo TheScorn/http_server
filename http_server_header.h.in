@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
+#include <netinet/in.h>
 
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
@@ -16,6 +17,7 @@ struct input_args_struct {
     uint16_t selected_port;
     int session_id_length;
     int session_id_lifespan;
+    struct sockaddr_in server_add;
 };
 
 struct handle_args_struct {
@@ -104,5 +106,7 @@ int drop_session(char* sesion_id);
 #define DEFAULT_SESSION_ID_LENGTH 24
 #define DEFAULT_SESSION_ID_LIFESPAN 30
 #define MAX_NUMBER_OF_PAGE_VAR 10
+#define DEFAULT_NAS_IP "127.0.0.1"
+#define DEFAULT_NAS_PORT 54004
 
 #endif

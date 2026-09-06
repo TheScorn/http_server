@@ -37,10 +37,14 @@ add_library(PPHP STATIC PPHP.c)
 set_target_properties(PPHP PROPERTIES PUBLIC_HEADER PPHP)
 set_target_properties(PPHP PROPERTIES LINKER_LANGUAGE C)
 
+add_library(NAS_API STATIC NAS_API.c)
+set_target_properties(NAS_API PROPERTIES PUBLIC_HEADER NAS_API)
+set_target_properties(NAS_API PROPERTIES LINKER_LANGUAGE C)
+
 #lib for base64 decode
 add_library(base64 base64.c)
 set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP)
+target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP NAS_API)

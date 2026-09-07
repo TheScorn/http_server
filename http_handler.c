@@ -77,7 +77,6 @@ void *handle_client(void *arg) {
 
     
     //sprawdzanie czy typ 3
-    //TODO
     //POST bo GET nie powinno zmieniać stanu strony
     regcomp(&regex, "^POST[[:space:]]/logout[[:space:]]HTTP/1.1", REG_EXTENDED);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
@@ -89,10 +88,10 @@ void *handle_client(void *arg) {
     if(connection_type == 1) {
         struct client_info_struct client_info;
         client_info.logged_in = false;
-        client_info.access_flags = 0;
+        client_info.elevated = 0;
         strncpy(client_info.name, "null", 30);
         strncpy(client_info.password, "default", 30);
-        client_info.access_flags = 0;
+ 
 
 
         //szukamy jaką stronę trzeba wysłać
@@ -351,9 +350,10 @@ void *handle_client(void *arg) {
 
             
             //jeśli strona jest typu 0
-            if(file_info->zone_type == 0) {
+            if(file_info->zone_type == 0 || file_info->zone_type == 2) {
                 //nie musimy sprawdzać praw użytkownika do strony
-                
+                //też w przypadku strony typu 2, jeśli użytkownik jest zalogowany to powinna się wyświetlić.
+
                 int build_response_status = build_http_response(file_info->file_path, file_ext, response, &response_len, buffer_size);
                 if(build_response_status == -1) {
                     fprintf(stderr, "File stated in data base but could not be opened.\n");
@@ -409,8 +409,8 @@ void *handle_client(void *arg) {
 
 
             }
-            else if(file_info->zone_type == 1) {
-                if(file_info->zone_id & client_info.access_flags == 0) {
+            else if(file_info->zone_type == 1) { //zone tylko dla elevated
+                if(client_info.elevated == 0) {
                     //user nie ma praw do strony
                     char date[50];
                     http_current_time(date);
@@ -502,7 +502,7 @@ void *handle_client(void *arg) {
 
             }
             else {
-                //zone_type 2 (póki co nie ma takiej strony to na później)
+                
             }
             
 

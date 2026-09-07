@@ -207,7 +207,7 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
 
     char select_statement[250];
 
-    snprintf(select_statement, 250, "SELECT Sessions.username, Sessions.expiry, Users.access FROM Sessions INNER JOIN Users ON Sessions.username = Users.username WHERE session_id=\"%s\"", session_id);
+    snprintf(select_statement, 250, "SELECT Sessions.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.username = Users.username WHERE session_id=\"%s\"", session_id);
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_close(db);
@@ -237,7 +237,7 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
 
     strcpy(client_info->name, (char *)name);
 
-    client_info->access_flags = sqlite3_column_int(stmt, 2);
+    client_info->elevated = sqlite3_column_int(stmt, 2);
 
     sqlite3_finalize(stmt);
     sqlite3_close(db);

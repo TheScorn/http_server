@@ -17,7 +17,7 @@ struct input_args_struct {
     uint16_t selected_port;
     int session_id_length;
     int session_id_lifespan;
-    struct sockaddr_in server_add;
+    struct sockaddr_in NAS_add;
 };
 
 struct handle_args_struct {
@@ -40,7 +40,7 @@ struct client_info_struct {
     char name[30];
     char email[40];
     char password[30];
-    int access_flags;
+    int elevated;
 };
 
 void *handle_client(void *arg);

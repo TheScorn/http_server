@@ -249,7 +249,7 @@ int convert(unsigned long long* result, char* str) {
         return -2;
     }
     else if(*end) {
-        fprint(stderr, "Function convert: str had garbage chars in the end.\n");
+        fprintf(stderr, "Function convert: str had garbage chars in the end.\n");
         return -3;
     }
     return 0;

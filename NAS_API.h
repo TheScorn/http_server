@@ -31,6 +31,8 @@ int send_MKDIR(int sockD, char* path, char* login, char* password);
 
 int convert(unsigned long long* result, char* str);
 
+int recv_convert_prefix(int sockD, unsigned long long* prefix);
+
 char* add_prefix(char* message);
 
 int recv_message(int sockD, char* buffer, unsigned long long message_len);

@@ -2,14 +2,12 @@
 Repository for http server
 
 Repo na część servera odpowiedzialną za http
-Przeniesione zostaną tu wszyskie funkcjonalności z repo Server, które zostanie usunięte
 
-Server będzie korzystał z mariadb do przechowywania danych użytkowników i info o każdej możliwej do wyświetlenia stronie.
-Server będzie logował się do bazy poprzez konto 'http_server'
-hasłem 'passwd' (sprawdzić opcje z hashowaniem).
-Server http będzie miał jedną? bazę danych z dwoma? tabelmai.
+Przebudowa do praw admina.
+Nowe założenia do stron. Strony są albo ogólnodostępne(main, login) albo dostępne po zalogowaniu i mają treść dobraną do użytkownika (NAS). Specjalną kategeorią są strony dla admina (Status - testowa póki co). Tam użytkownik musi mieć flagę elevated.
 
-
-Spostrzeżenie do dokmentacji:
-    Pliki są wielokrotnie wysyłane tylko jeśli serwer nie odpowiada. Strona próbuje powtórzyć transmisję.
-    Prawdopodobnie jest to wynik działania protokołów sieciowych.
+TODO:
+1. Przebudowa bazy danych tak żeby użytkownicy zawierali flagę elevated + usunięcie access flags - będą zbędne.
+2. Dodanie tabeli od użytkowników NAS. Każdy użytkownik http może mieć przypisane jedno konto użytkownika NAS.
+3. Zmiana sprawdzania praw na stronach.
+4. Dodanie strony NAS i podstawowa konfiguracja.

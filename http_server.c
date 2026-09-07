@@ -38,6 +38,9 @@ int main(int argc, char **argv) {
     input_args.selected_port = DEFAULT_PORT;
     input_args.session_id_length = DEFAULT_SESSION_ID_LENGTH;
     input_args.session_id_lifespan = DEFAULT_SESSION_ID_LIFESPAN;
+    input_args.NAS_add.sin_port = DEFAULT_NAS_PORT;
+    inet_pton(AF_INET, DEFAULT_NAS_IP, &input_args.NAS_add.sin_addr);
+
 
     int handle_arg_ret = handle_arguments(argc, argv, &input_args);
     if(handle_arg_ret != 0) {
@@ -77,15 +80,13 @@ int main(int argc, char **argv) {
         fprintf(stderr, "No SQLite database found\n");
         return -1;
     }
-    
-    
-
     //connection successful
     if(input_args.verbose_init) {
         printf("Connection to database successful\n");
     }
     
-
+    //test połączenia z NAS
+    
     
 
     //create socket

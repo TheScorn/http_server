@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" e>
+    <head>
+        <link rel="stylesheet" type="text/css" href="NAS_page_style.css">
+        <title>NAS</title>
+        <meta charset="UTF-8">
+    </head>
+
+    <body style="background-color: gray;">
+        <div class="page-body">
+            <div class="top-bar">
+                Home Server    Version <span id="versionField" class="varsion-field"></span>
+            </div>
+            <div class="sub-top-bar">
+                <button id="buttonMainPage" class="sub-top-bar-button" onclick="mainPageOnClick()">Main Page</button>
+                <button id="buttonLogin" onclick="logoutButtonOnClick()" class="login-button">Logout</button>
+                <span id="paragrahLoggedInAs" class="logged-in-as-paragraph"></span>
+            </div>
+            
+            <div class="page-main-body">
+                Miejsce na obsługę NAS
+            </div>
+
+        </div>
+    </body>
+
+    <script src="NAS_page.js"></script>
+
+</html>

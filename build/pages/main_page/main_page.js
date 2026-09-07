@@ -50,6 +50,10 @@ function statusButtonOnClick() {
     window.location.href = "status_page.html";
 }
 
+function NASButtonOnClick() {
+    window.location.href = "NAS_page.html";
+}
+
 async function sendLogOut() {
     try {
         const response = await fetch("/logout", {

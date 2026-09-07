@@ -20,13 +20,17 @@ function setLoginInfo() {
     }
     else {
         //jeśli użytkownik nie jest zalogowany a jest na tej stronie to znaczy coś jest nie tak z serwerem i powinniśmy wyjść do main
-        console.error("Unjustified page loaded");
+        console.error("Unjustified page loaded.");
         window.location.href = "main_page.html";
     }
 }
 
 function mainPageOnClick() {
     window.location.href = "main_page.html";
+}
+
+function NASPageOnClick() {
+    window.location.href = "NAS_page.html";
 }
 
 async function logoutButtonOnClick() {
@@ -42,7 +46,7 @@ async function logoutButtonOnClick() {
         }
     }
     else {
-        console.error("Unjustified page loaded");
+        console.error("Unjustified page loaded.");
         window.location.href = "main_page.html";
     }
 }

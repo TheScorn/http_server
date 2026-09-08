@@ -82,11 +82,11 @@ void generate_session_id(int length, char* token);
 #endif
 
 
-int authenticate(char* login, char* password);
+int authenticate(char* login, char* password, int* user_id);
 
 int http_current_time(char* date);
 
-int save_session_id(char* session_id, char* username, time_t expiry);
+int save_session_id(char* session_id, int user_id, time_t expiry);
 
 int authorize(char* session_id, struct client_info_struct* client_info);
 

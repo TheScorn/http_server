@@ -542,7 +542,10 @@ void *handle_client(void *arg) {
         //obsługa logowania:
         //#
         //check credentials
-        int authentication_status = authenticate(login, password);
+        //store user_id
+        int user_id;
+
+        int authentication_status = authenticate(login, password, &user_id);
         if(authentication_status == -1) {
             fprintf(stderr, "Error occured while opening database.\n");
             free(buffer);
@@ -603,7 +606,7 @@ void *handle_client(void *arg) {
         //moment wygaśnięcia tokenu
         time_t expiry = time(NULL) + (60 * session_id_lifespan);
         
-        int save_token_status = save_session_id(session_id, login, expiry);
+        int save_token_status = save_session_id(session_id, user_id, expiry);
         if(save_token_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");
             close(client_fd);

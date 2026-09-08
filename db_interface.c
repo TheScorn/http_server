@@ -98,9 +98,11 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
  * 
  * @param password pointer to char list with password
  * 
+ * @param user_id pointer to int where id of user with given credential is stored
+ * 
  * @return 0 if authentication correct, -1 if no database found, -2 if error occured during select execution, -3 if no user with given login found, -4 if password incorrect, -5 if execution failed.
  */
-int authenticate(char* login, char* password) {
+int authenticate(char* login, char* password, int* user_id) {
     sqlite3 *db;
     if(sqlite3_open(DB_PATH, &db) != 0) {
         //jeśli nie ma bazy danych
@@ -111,7 +113,7 @@ int authenticate(char* login, char* password) {
 
     char select_statement[100];
 
-    snprintf(select_statement, 100, "SELECT password FROM Users WHERE username = \"%s\";", login);
+    snprintf(select_statement, 100, "SELECT user_id, password FROM Users WHERE username = \"%s\";", login);
 
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
@@ -133,7 +135,7 @@ int authenticate(char* login, char* password) {
     }
     
 
-    const unsigned char* selected_password = (const unsigned char*)sqlite3_column_text(stmt, 0);
+    const unsigned char* selected_password = (const unsigned char*)sqlite3_column_text(stmt, 1);
     
 
     if(strcasecmp(password, selected_password) != 0) {
@@ -142,6 +144,10 @@ int authenticate(char* login, char* password) {
         return -4;
     }
     
+    //po zalogowaniu zapamiętujemy user_id
+    //korzystamy z user_id zamiast username bo jest kluczem głównym i jest łatwiejszy w zapisaniu
+    *user_id = sqlite3_column_int(stmt, 0);
+
     //nie można finalizować stmt przed sprawdzeniem hasła bo wtedy zmienia się też selected_password
     sqlite3_finalize(stmt);
     sqlite3_close(db);
@@ -155,13 +161,13 @@ int authenticate(char* login, char* password) {
  * 
  * @param token pointer to char list representing session id
  * 
- * @param username pointer to char list representing username
+ * @param user_id integer carrying user_id
  * 
  * @param expiry int representing time when token expires
  * 
  * @return 0 if execution successful, -1 if database could not be opened, -2 if query execution unsuccessful
  */
-int save_session_id(char* session_id, char* username, time_t expiry) {
+int save_session_id(char* session_id, int user_id, time_t expiry) {
     sqlite3* db;
     if(sqlite3_open(DB_PATH, &db) != 0) {
         //jeśli nie ma bazy danych
@@ -172,7 +178,7 @@ int save_session_id(char* session_id, char* username, time_t expiry) {
     char insert_statement[200];
 
 
-    snprintf(insert_statement, 200, "INSERT INTO Sessions (session_id, username, expiry) VALUES(\"%s\", \"%s\", %ld);", session_id, username, expiry);
+    snprintf(insert_statement, 200, "INSERT INTO Sessions (session_id, user_id, expiry) VALUES(\"%s\", \"%d\", %ld);", session_id, user_id, expiry);
 
 
     if(sqlite3_exec(db, insert_statement, NULL, NULL, NULL) != 0) {
@@ -207,7 +213,7 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
 
     char select_statement[250];
 
-    snprintf(select_statement, 250, "SELECT Sessions.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.username = Users.username WHERE session_id=\"%s\"", session_id);
+    snprintf(select_statement, 250, "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=\"%s\"", session_id);
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_close(db);
@@ -301,7 +307,7 @@ int drop_session(char* sesion_id) {
         sqlite3_close(db);
         return -4;
     }
-    sqlite3_exec(db, "COMMI;", NULL, NULL, NULL);
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
 
     sqlite3_close(db);
     return 0;

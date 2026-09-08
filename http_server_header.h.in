@@ -21,11 +21,12 @@ struct input_args_struct {
 };
 
 struct handle_args_struct {
+    bool verbose_init;
+    bool test_passed;
     int client_fd;
     int session_id_length;
     int session_id_lifespan;
-    bool verbose_init;
-    
+    struct sockaddr_in NAS_add;
 };
 
 struct file_info_struct {

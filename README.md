@@ -14,9 +14,9 @@ Poprawki
 Plan na NAS
 1. inicjalizacja danych serwera NAS (IP + port) - DONE
 2. TEST w main - DONE
-2. Przekazywanie danych NAS do wątków obsługujących użykownika (w strukturze sockaddr_in ???) razem z wynikiem TEST
-(jeśli niepowodzenie to np. wyłączamy możliwość wejścia na podstronę NAS)
-3. Obsługa wpisywania IP i portu NAS jako argumentów main.
-4. Zaplanowanie schematu żądania które będą przekazywane do NAS
-5. Łączenie się z NAS gdy wymaga tego żądanie.
+3. Przekazywanie danych NAS do wątków obsługujących użykownika (w strukturze sockaddr_in ???) razem z wynikiem TEST
+(jeśli niepowodzenie to np. wyłączamy możliwość wejścia na podstronę NAS) - DONE
+4. Obsługa wpisywania IP i portu NAS jako argumentów main.
+5. Zaplanowanie schematu żądania które będą przekazywane do NAS
+6. Łączenie się z NAS gdy wymaga tego żądanie.
 

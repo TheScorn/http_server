@@ -28,11 +28,15 @@ void *handle_client(void *arg) {
     struct handle_args_struct* args = arg;
   
 
-    int client_fd = args->client_fd;
+    bool NAS_connection = args->test_passed;
     bool verbose = args->verbose_init;
+    int client_fd = args->client_fd;
     int session_id_length = args->session_id_length;
     int session_id_lifespan = args->session_id_lifespan;
-    
+    struct sockaddr_in NAS_add;
+    memcpy(&NAS_add, &(args->NAS_add), sizeof(struct sockaddr_in));
+
+
 
     free(args);
     //trzeba zaimplementować sprawdzanie typu połączenia

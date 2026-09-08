@@ -184,6 +184,8 @@ int main(int argc, char **argv) {
         memcpy(&(handle_args->session_id_length), &(input_args.session_id_length), sizeof(int));
         memcpy(&(handle_args->session_id_lifespan), &(input_args.session_id_lifespan), sizeof(int));
         memcpy(&(handle_args->verbose_init), &(input_args.verbose_init), sizeof(bool));
+        memcpy(&(handle_args->test_passed), &(NAS_connection), sizeof(bool));
+        memcpy(&(handle_args->NAS_add), &(input_args.NAS_add), sizeof(struct sockaddr_in));
 
         pthread_t thread_id;
 

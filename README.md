@@ -8,12 +8,12 @@ Nowe założenia do stron. Strony są albo ogólnodostępne(main, login) albo do
 
 TODO:
 Poprawki
-1. W sesji zapisywanie tylko user_id zamiast username
-
+1. W sesji zapisywanie tylko user_id zamiast username - DONE
+2. Komunikat o błędnym logowaniu wyświetlany na stronie
 
 Plan na NAS
-1. inicjalizacja danych serwera NAS (IP + port)
-2. TEST w main
+1. inicjalizacja danych serwera NAS (IP + port) - DONE
+2. TEST w main - DONE
 2. Przekazywanie danych NAS do wątków obsługujących użykownika (w strukturze sockaddr_in ???) razem z wynikiem TEST
 (jeśli niepowodzenie to np. wyłączamy możliwość wejścia na podstronę NAS)
 3. Obsługa wpisywania IP i portu NAS jako argumentów main.

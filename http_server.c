@@ -38,9 +38,9 @@ int main(int argc, char **argv) {
     input_args.selected_port = DEFAULT_PORT;
     input_args.session_id_length = DEFAULT_SESSION_ID_LENGTH;
     input_args.session_id_lifespan = DEFAULT_SESSION_ID_LIFESPAN;
-    input_args.NAS_add.sin_port = DEFAULT_NAS_PORT;
+    input_args.NAS_add.sin_port = htons(DEFAULT_NAS_PORT);
     inet_pton(AF_INET, DEFAULT_NAS_IP, &input_args.NAS_add.sin_addr);
-
+    input_args.NAS_add.sin_family = AF_INET;
 
     int handle_arg_ret = handle_arguments(argc, argv, &input_args);
     if(handle_arg_ret != 0) {
@@ -85,8 +85,23 @@ int main(int argc, char **argv) {
         printf("Connection to database successful\n");
     }
     
+
+    bool NAS_connection = true;
     //test połączenia z NAS
-    
+    if(input_args.verbose_init) {
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &input_args.NAS_add.sin_addr, ip, sizeof(ip));
+        printf("Testing connection to NAS server at %s:%d\n", ip, ntohs(input_args.NAS_add.sin_port));
+    }
+    int test_NAS_connection_status = test_NAS_connection(&input_args.NAS_add);
+    if(test_NAS_connection_status < 0) {
+        fprintf(stderr, "Warning! test_NAS_connection returned with error code: %d. NAS connection could not be established.\n", test_NAS_connection_status);
+        NAS_connection = false;
+    }
+    if(input_args.verbose_init && test_NAS_connection_status == 0) {
+        printf("Connection established, TEST passed.\n");
+    }
+
     
 
     //create socket

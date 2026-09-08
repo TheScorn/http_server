@@ -71,6 +71,8 @@ char * get_password(char * authorization);
 
 int test_con();
 
+int test_NAS_connection(struct sockaddr_in* NAS_add);
+
 #ifdef __cplusplus
 extern "C" {
 #endif

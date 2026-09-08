@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <netinet/in.h>
 
 /**
  * @brief sending ACCEPT to NAS server.
@@ -137,7 +138,45 @@ int TEST_routine(int sockD) {
     }
 }
 
+/**
+ * @brief routine for testing server connection
+ * 
+ * Function establishes connection with NAS, then, using TEST_routine, checks server response.
+ * 
+ * @param NAS_add pointer to sockaddr_in struct, that stores NAS connection info.
+ * 
+ * @return 0 if execution successful and TEST passed, -1 if connection error occured,
+ * -2 if error occured during send_TEST, -3 if error occured during ACK recieve,
+ * -4 if response from server was not ACK.
+ * 
+ */
+int test_NAS_connection(struct sockaddr_in* NAS_add) {
 
+    int sockD = socket(AF_INET, SOCK_STREAM, 0);
+
+    int connectStatus = connect(sockD, (struct sockaddr*)NAS_add, sizeof(*NAS_add));
+    if(connectStatus == -1) {
+        return -1;
+    }
+
+    int test_routine_status = TEST_routine(sockD);
+    if(test_routine_status == -1) {
+        close(sockD);
+        return -2;
+    }
+    else if(test_routine_status == -2) {
+        close(sockD);
+        return -3;
+    }
+    else if(test_routine_status == 1) {
+        close(sockD);
+        return -4;
+    }
+
+    close(sockD);
+    return 0;
+
+}
 
 
 /**

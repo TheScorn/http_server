@@ -10,13 +10,16 @@ TODO:
 Poprawki
 1. W sesji zapisywanie tylko user_id zamiast username - DONE
 2. Komunikat o błędnym logowaniu wyświetlany na stronie
+3. Dodanie komunikatów o błędach do funkcji obsługującej argumenty w main (obecna wersja jest okropnie leniwa) - DONE
+4. Ulepszenie obsługi argumentów, dodanie większej automatyzacji do err.
+
 
 Plan na NAS
 1. inicjalizacja danych serwera NAS (IP + port) - DONE
 2. TEST w main - DONE
 3. Przekazywanie danych NAS do wątków obsługujących użykownika (w strukturze sockaddr_in ???) razem z wynikiem TEST
 (jeśli niepowodzenie to np. wyłączamy możliwość wejścia na podstronę NAS) - DONE
-4. Obsługa wpisywania IP i portu NAS jako argumentów main.
+4. Obsługa wpisywania IP i portu NAS jako argumentów main. - DONE
 5. Zaplanowanie schematu żądania które będą przekazywane do NAS
 6. Łączenie się z NAS gdy wymaga tego żądanie.
 

@@ -41,6 +41,24 @@ async function logoutButtonOnClick() {
     }
 }
 
+async function GETNASLIST(path) {
+    if(!logged_in) {
+        console.error("Function should not be used if user is not logged in");
+        window.location.href = "main_page.html";
+        return null;
+    }
+
+    try {
+        const response = await fetch("/NAS/LIST/" + path, {
+            method: "POST",
+            credentials: "include"
+        });
+        return response;
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
+}
 
 setServerVersionInfo();
 setLoginInfo();

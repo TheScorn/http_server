@@ -88,6 +88,8 @@ void *handle_client(void *arg) {
     }
 
 
+
+
     //Obsługa http request
     if(connection_type == 1) {
         struct client_info_struct client_info;

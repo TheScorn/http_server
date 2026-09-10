@@ -44,6 +44,10 @@ struct client_info_struct {
     int elevated;
 };
 
+enum connection_type_en {
+    UNKNOWN, GET, LOGIN, LOGOUT, NAS
+};
+
 void *handle_client(void *arg);
 
 const char *get_file_extension(const char *filename);

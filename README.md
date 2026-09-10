@@ -13,7 +13,7 @@ Poprawki
 3. Dodanie komunikatów o błędach do funkcji obsługującej argumenty w main (obecna wersja jest okropnie leniwa) - DONE
 4. Ulepszenie PPHP tak by nie korzystało z regexa (mniejsze zużycie pamięci).
 5. Poprawki w regexach z POST tak żeby były bardziej konkretne.
-
+6. Czasowe usuwanie starych tokenów. Ważne jeśli serwer miałby dłużej działać nierestartowany.
 
 Plan na NAS
 1. inicjalizacja danych serwera NAS (IP + port) - DONE

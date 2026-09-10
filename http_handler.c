@@ -47,8 +47,8 @@ void *handle_client(void *arg) {
     //3: Logout request
 
     ////////////////////////////////////////////////////////////////
-    char connection_type = 0;
-
+    
+    enum connection_type_en connection_type = UNKNOWN;
 
     int buffer_size = DEFAULT_BUFFER_SIZE;
     char *buffer = (char *)malloc(buffer_size * sizeof(char));
@@ -70,13 +70,13 @@ void *handle_client(void *arg) {
     regmatch_t matches[2];
     
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        connection_type = 1;
+        connection_type = GET;
     }
 
     //////////////////////////sprawdzamy czy typ 2
     regcomp(&regex, "^POST[[:space:]]+/[[:space:]]+HTTP/1\\.[01]\r?\n(.|\n)*Content-Type:[[:space:]]*multipart/form-data;[[:space:]]*boundary=([^\r\n]+)(.|\n)*name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        connection_type = 2;
+        connection_type = LOGIN;
     }
 
     
@@ -84,14 +84,18 @@ void *handle_client(void *arg) {
     //POST bo GET nie powinno zmieniać stanu strony
     regcomp(&regex, "^POST[[:space:]]/logout[[:space:]]HTTP/1.1", REG_EXTENDED);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        connection_type = 3;
+        connection_type = LOGOUT;
+    }
+
+    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/(^ )*[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+    regmatch_t NAS_matches[4];
+    if(regexec(&regex, buffer, 4, NAS_matches, 0) == 0) {
+        connection_type = NAS;
     }
 
 
-
-
     //Obsługa http request
-    if(connection_type == 1) {
+    if(connection_type == GET) {
         struct client_info_struct client_info;
         client_info.logged_in = false;
         client_info.elevated = 0;
@@ -519,7 +523,7 @@ void *handle_client(void *arg) {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //obsługa logowania
-    else if(connection_type == 2) {
+    else if(connection_type == LOGIN) {
 
         regmatch_t matches2[4];
         char login[32];
@@ -664,7 +668,7 @@ void *handle_client(void *arg) {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //obsługa wylogowania
-    else if(connection_type == 3) {
+    else if(connection_type == LOGOUT) {
         //wyciągamy session_id
         //jeśli istnieje sesja (sprawdzamy czy dostarczone jest ciasteczko i czy jest w bazie)
         //to odnajdujemy je i usuwamy

@@ -22,14 +22,13 @@ Plan na NAS
 (jeśli niepowodzenie to np. wyłączamy możliwość wejścia na podstronę NAS) - DONE
 4. Obsługa wpisywania IP i portu NAS jako argumentów main. - DONE
 5. Zaplanowanie schematu żądania które będą przekazywane do NAS - DONE
-
 6. Funkcja żądania listy w js na stronie uruchamiana po odpaleniu strony.
 7. Parsowanie żądania i wyciąganie z db potrzebnego info do użycia funkcji z NAS_API.
 8. Łączenie się z NAS gdy wymaga tego żądanie.
 9. Parsowanie odpowiedzi z NAS i zmienianie jej w format json.
 10. Wysyłanie odpowiedzi na stronę.
 
-
+TERAZ napisać rotine dla każdego typu reqestu bazując na Cli
 
 Plan endpointów
 Endpointy będą wysyłane z POST

@@ -213,7 +213,7 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
 
     char select_statement[250];
 
-    snprintf(select_statement, 250, "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=\"%s\"", session_id);
+    snprintf(select_statement, 250, "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=\"%s\";", session_id);
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_close(db);
@@ -250,6 +250,65 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
     
     return 0;
 }
+
+/**
+ * @brief Authorizing function with NAS info retrieving
+ * 
+ * @param session_id pointer to null-terminated string with session_id
+ * 
+ * @param client_info pointer to client_info_struct where user info from db will be stored
+ * 
+ * @return 0 if execution successful, -1 if db could not be opened, -2 if select query execution failed,
+ *  -3 if session_id not found in db, -4 if token is expired.
+ */
+int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
+    sqlite3* db;
+    if(sqlite3_open(DB_PATH, &db) != 0) {
+        return -1;
+    }
+
+    sqlite3_stmt* stmt;
+
+    char select_statement[350];
+    snprintf(select_statement, 350, "SELECT Users.username, Users.elevated, Sessions.expiry, NAS_Users.NAS_username, NAS_Users.NAS_password FROM Users INNER JOIN Sessions ON Users.user_id = Sessions.user_id INNER JOIN NAS_Users ON Users.user_id = NAS_Users.user_id WHERE session_id=\"%s\";", session_id);
+
+    if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+        sqlite3_close(db);
+        return -2;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -3;
+    }
+
+    //sprawdzanie czy token nie jest expired
+    int expiry = sqlite3_column_int(stmt, 2);
+    if(time(NULL) > expiry) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -4;
+    }
+
+    //zapisanie info o uzytkowniku
+    const char* name = sqlite3_column_text(stmt, 0);
+    strcpy(client_info->name, (char *)name);
+
+    //zapisane info o credentialach NAS
+    const char* NAS_username = sqlite3_column_text(stmt, 3);
+    const char* NAS_password = sqlite3_column_text(stmt, 4);
+    strcpy(client_info->NAS_username, (char*)NAS_username);
+    strcpy(client_info->NAS_password, (char*)NAS_password);
+
+    client_info->elevated = sqlite3_column_int(stmt, 1);
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+
+    return 0;
+}
+
 
 
 /**

@@ -38,10 +38,13 @@ struct file_info_struct {
 
 struct client_info_struct {
     bool logged_in;
+    int elevated;
     char name[30];
     char email[40];
     char password[30];
-    int elevated;
+    char NAS_username[30];
+    char NAS_password[30];
+    
 };
 
 enum connection_type_en {
@@ -96,6 +99,8 @@ int http_current_time(char* date);
 int save_session_id(char* session_id, int user_id, time_t expiry);
 
 int authorize(char* session_id, struct client_info_struct* client_info);
+
+int authorize_NAS(char* session_id, struct client_info_struct* client_info);
 
 int drop_all_sessions();
 

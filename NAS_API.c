@@ -370,11 +370,16 @@ int recv_convert_prefix(int sockD, unsigned long long* prefix) {
 /**
  * @brief Simple recieve message routine.
  * 
+ * Function recieves and stores message in buffer.
+ * 
+ * 
  * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
  * 
  * @param buffer pointer to char array where recieved message should be stored.
  * After successful execution it holds null-terminated string.
- * NOTE that the memory for the buffer should be allocated before using this function.
+ * NOTE that the memory for the buffer should be allocated before using this function
+ * and that the buffer needs to be at least one byte longer than the
+ * message_len, so that null-terminator can fit.
  * 
  * @param message_len length of expected message in bytes
  * 
@@ -438,6 +443,76 @@ int send_LIST(int sockD, char* path, char* login, char* password) {
     free(request);
     return 0;
 }
+
+/**
+ * @brief routine for sending LIST request and recieving answer.
+ * 
+ * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
+ * 
+ * @param path pointer to null-terminated string with path.
+ * 
+ * @param login pointer to null-terminated string with login.
+ * 
+ * @param password pointer to null-terminated string with password.
+ * 
+ * @param list_buffer pointer to null-terminated string where the LIST answer
+ * from server should be stored. If this function returns 0,
+ * the memory for the list will be dynamically allocated
+ * and needs to be freed manually after use.
+ * If function returns with value > 0,
+ * this string will be set to the error recieved from NAS server.
+ * In this case it should be freed as well.
+ * On fatal errors (return > 0) list_buffer will be freed automatically.
+ * 
+ * @return 0 if execution successful, -1 if error occured inside send_LIST,
+ * -2 if server closed connection while sending prefix,
+ * -3 if error occured during prefix recieve,
+ * -4 if error occured during conversion,
+ * -5 if server closed connection while sending list,
+ * -6 if error occured while sending list.
+ * 1 if server sent an error message instead of list.
+ */
+int LIST_routine(int sockD, char* path, char* login, char* password, char* list_buffer) {
+    char status;
+    
+    status = send_LIST(sockD, path, login, password);
+    if(status == -1) {
+        return -1;
+    }
+
+    unsigned long long prefix;
+
+    status = recv_convert_prefix(sockD, &prefix);
+    if(status == -1) {
+        return -2;
+    }
+    else if(status == -2) {
+        return -3;
+    }
+    else if(status == -3) {
+        return -4;
+    }
+
+    list_buffer = (char*)malloc(sizeof(char) * (prefix + 1));
+
+    status = recv_message(sockD, list_buffer, prefix);
+    if(status == -1) {
+        free(list_buffer);
+        return -5;
+    }
+    else if(status == -2) {
+        free(list_buffer);
+        return -6;
+    }
+
+    if(strncasecmp(list_buffer, "ERROR", 5) == 0) {
+        return 1;
+    }
+
+    return 0;
+
+}
+
 
 /**
  * @brief Sending GET to NAS server.
@@ -557,6 +632,79 @@ int send_DEL(int sockD, char* path, char* login, char* password, bool force_flag
 }
 
 /**
+ * @brief routine for sending DEL and recieving answer.
+ * 
+ * This function always sends force_delete flag set to true.
+ * 
+ * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
+ * 
+ * @param path pointer to null-terminated string with path.
+ * 
+ * @param login pointer to null-terminated string with login.
+ * 
+ * @param password pointer to null-terminated string with password.
+ * 
+ * @param response pointer to null-terminated string with response from NAS.
+ * This pointer will be dynamically allocated after use 
+ * if this function returns with value > 0 and it will contain message from server.
+ * In this case this memory needs to be manually freed.
+ * For any other return value, user should not try to free this pointer.
+ * 
+ * @return 0 if execution successful, -1 if error occured while sending DEL request,
+ * -2 if server closed connection while sending prefix,
+ * -3 if error occured during prefix recieve,
+ * -4 if conversion error occured,
+ * -5 if server closed connection while sending response
+ * -6 if error occured during response recieve
+ * -7 if unexpected message from NAS recieved
+ * 1 if 
+ */
+int DEL_routine(int sockD, char* path, char* login, char* password, char* response) {
+    char status;
+    if(send_DEL(sockD, path, login, password, true) == -1) {
+        return -1;
+    }
+
+    unsigned long long prefix;
+    status = recv_convert_prefix(sockD, &prefix);
+    if(status == -1) {
+        return -2;
+    }
+    else if(status == -2) {
+        return -3;
+    }
+    else if(status == -3) {
+        return -4;
+    }
+
+    response = (char*)malloc(sizeof(char) * (prefix + 1));
+
+    status = recv_message(sockD, response, prefix);
+    if(status == -1) {
+        free(response);
+        return -5;
+    }
+    else if(status == -2) {
+        free(response);
+        return -6;
+    }
+
+
+    if(strncasecmp(response, "ERROR", 5) == 0) {
+        return 1;
+    }
+    else if(strncasecmp(response, "ACK", 3) != 0) {
+        free(response);
+        return -7;
+    }
+    free(response);
+    return 0;
+
+}
+
+
+
+/**
  * @brief Sending MKDIR to NAS server.
  * 
  * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
@@ -592,4 +740,74 @@ int send_MKDIR(int sockD, char* path, char* login, char* password) {
     }
     free(request);
     return 0;
+}
+
+
+/**
+ * @brief routine for sending MKDIR and recieving answer.
+ * 
+ * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
+ * 
+ * @param path pointer to null-terminated string with path.
+ * 
+ * @param login pointer to null-terminated string with login.
+ * 
+ * @param password pointer to null-terminated string with password.
+ * 
+ * @param response pointer to null-terminated string with response from NAS.
+ * This pointer will be dynamically allocated after use 
+ * if this function returns with value > 0 and it will contain message from server.
+ * In this case this memory needs to be manually freed.
+ * For any other return value, user should not try to free this pointer.
+ * 
+ * @return 0 if execution successful, -1 if error occured while sending MKDIR request,
+ * -2 if server closed connection while sending prefix,
+ * -3 if error occured during prefix recieve,
+ * -4 if conversion error occured,
+ * -5 if server closed connection while sending response
+ * -6 if error occured during response recieve
+ * -7 if unexpected message from NAS recieved
+ * 1 if 
+ */
+int MKDIR_routine(int sockD, char* path, char* login, char* password, char* response) {
+    char status;
+    if(send_MKDIR(sockD, path, login, password) == -1) {
+        return -1;
+    }
+
+    unsigned long long prefix;
+    status = recv_convert_prefix(sockD, &prefix);
+    if(status == -1) {
+        return -2;
+    }
+    else if(status == -2) {
+        return -3;
+    }
+    else if(status == -3) {
+        return -4;
+    }
+
+    response = (char*)malloc(sizeof(char) * (prefix + 1));
+
+    status = recv_message(sockD, response, prefix);
+    if(status == -1) {
+        free(response);
+        return -5;
+    }
+    else if(status == -2) {
+        free(response);
+        return -6;
+    }
+
+
+    if(strncasecmp(response, "ERROR", 5) == 0) {
+        return 1;
+    }
+    else if(strncasecmp(response, "ACK", 3) != 0) {
+        free(response);
+        return -7;
+    }
+    free(response);
+    return 0;
+
 }

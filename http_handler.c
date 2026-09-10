@@ -87,7 +87,7 @@ void *handle_client(void *arg) {
         connection_type = LOGOUT;
     }
 
-    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/(^ )*[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ])*[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
     regmatch_t NAS_matches[4];
     if(regexec(&regex, buffer, 4, NAS_matches, 0) == 0) {
         connection_type = NAS;
@@ -137,6 +137,7 @@ void *handle_client(void *arg) {
 
         if(db_file_info_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");
+            free(buffer);
             free(response);
             free(page_name_buffer);
             free(file_name);
@@ -146,6 +147,7 @@ void *handle_client(void *arg) {
         }
         else if(db_file_info_status == -2) {
             fprintf(stderr, "Select query on Files unsuccessful.\n");
+            free(buffer);
             free(response);
             free(page_name_buffer);
             free(file_name);
@@ -179,6 +181,7 @@ void *handle_client(void *arg) {
 
             
             free(response);
+            free(buffer);
             free(page_name_buffer);
             free(file_name);
             free(file_info);
@@ -223,6 +226,7 @@ void *handle_client(void *arg) {
                 //free(file_info.zone_name);
                 free(response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 free(file_info);
                 close(client_fd);
@@ -242,6 +246,7 @@ void *handle_client(void *arg) {
                     //free(file_info.zone_name);
                     free(response);
                     free(page_name_buffer);
+                    free(buffer);
                     free(file_name);
                     free(file_info);
                     close(client_fd);
@@ -289,6 +294,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(complete_response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 free(file_info);
                 close(client_fd);
@@ -313,6 +319,7 @@ void *handle_client(void *arg) {
                 fprintf(stderr, "Database could not be opened.\n");
                 free(response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 free(file_info);
                 close(client_fd);
@@ -322,6 +329,7 @@ void *handle_client(void *arg) {
                 fprintf(stderr, "Select query on Sessions unsuccessful.\n");
                 free(response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 free(file_info);
                 close(client_fd);
@@ -338,7 +346,7 @@ void *handle_client(void *arg) {
                 snprintf(response, buffer_size,
                     "HTTP/1.1 302 Found\r\n"
                     "Date: %s\r\n"
-                    "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly"
+                    "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly\r\n"
                     "Location: /login_page.html"
                     , date);
 
@@ -348,6 +356,7 @@ void *handle_client(void *arg) {
 
                 free(response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 free(file_info);
                 close(client_fd);
@@ -370,6 +379,7 @@ void *handle_client(void *arg) {
                     free(file_info);
                     free(response);
                     free(page_name_buffer);
+                    free(buffer);
                     free(file_name);
                     close(client_fd);
                     return NULL;
@@ -413,6 +423,7 @@ void *handle_client(void *arg) {
                 free(complete_response);
                 free(response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 close(client_fd);
                 return NULL;
@@ -446,6 +457,7 @@ void *handle_client(void *arg) {
                     free(file_info);
                     free(response);
                     free(page_name_buffer);
+                    free(buffer);
                     free(file_name);
                     close(client_fd);
                     return NULL;
@@ -460,6 +472,7 @@ void *handle_client(void *arg) {
                     free(file_info);
                     free(response);
                     free(page_name_buffer);
+                    free(buffer);
                     free(file_name);
                     close(client_fd);
                     return NULL;
@@ -503,6 +516,7 @@ void *handle_client(void *arg) {
                 free(response);
                 free(complete_response);
                 free(page_name_buffer);
+                free(buffer);
                 free(file_name);
                 free(file_info);
                 close(client_fd);
@@ -726,7 +740,92 @@ void *handle_client(void *arg) {
         return NULL;
     }
 
+    else if(connection_type == NAS) {
 
+        //obojętnie jaki jest typ połączenia NAS i tak trzeba zrobić auth
+        //wyciągnąć login i hasło do NAS
+        // jdskasdmakdadw
+        // s             e
+        // 0             14
+        char* session_id = (char*)malloc(sizeof(char) * (session_id_length + 1));
+        snprintf(session_id, sizeof(char) * (session_id_length + 1), "%s", buffer + NAS_matches[3].rm_so);
+
+        struct client_info_struct client_info;
+        client_info.logged_in = false;
+        client_info.elevated = 0;
+        strncpy(client_info.name, "null", 30);
+        strncpy(client_info.password, "default", 30);
+
+        int authorize_status = authorize_NAS(session_id, &client_info);
+        free(session_id);
+        if(authorize_status == -1) {
+            fprintf(stderr, "Database could not be opened.\n");
+            free(buffer);
+            regfree(&regex);
+            close(client_fd);
+            return NULL;
+        }
+        else if(authorize_status == -2) {
+            fprintf(stderr, "Select query on Sessions unsuccessful.\n");
+            free(buffer);
+            regfree(&regex);
+            close(client_fd);
+            return NULL;
+        }
+        else if(authorize_status == -3 || authorize_status == -4) {
+            //jeśli tokena nie ma w bazie lub jeśli jest expired
+            //wysyłamy redirect do logowania oraz czyścimy nieprawidłowe ciastko
+            //potem można pomyśleć o rozdzieleniu tego na dwa przypadki
+            //póki nie ma mechanizmu usuwania sessionId to nie ma sensu
+            char response[160];
+            char date[50];
+            http_current_time(date);
+            regfree(&regex);
+            snprintf(response, 160,
+                "HTTP/1.1 302 Found\r\n"
+                "Date: %s\r\n"
+                "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly\r\n"
+                "Location: /login_page.html"
+                , date);
+
+            size_t response_len = strlen(response);
+            
+            size_t total = 0;
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response + total, response_len - total, 0);
+                if(n <= 0) {
+                    fprintf(stderr, "0 bytes sent, closing connection.\n");
+                    free(buffer);
+                    close(client_fd);
+                    return NULL;
+                }
+                total += n;
+            }
+            
+            free(buffer);
+            close(client_fd);
+            return NULL;
+
+        }
+
+        client_info.logged_in = true;
+
+
+        //po zalogowaniu wyciągamy ścieżkę i typ wiadomości NAS
+        size_t path_len = NAS_matches[2].rm_eo - NAS_matches[2].rm_so;
+        char* path = (char*)malloc(sizeof(char) * (1 + path_len + 1));
+        snprintf(path, sizeof(char) * (1 + path_len + 1), "/%s", buffer + NAS_matches[2].rm_so);
+
+
+        //łączenie z NAS
+
+
+
+
+        regfree(&regex);
+        free(buffer);
+        return NULL;
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

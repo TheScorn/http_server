@@ -21,13 +21,19 @@ int LOGINTEST_routine(int sockD, char* login, char* password);
 
 int send_LIST(int sockD, char* path, char* login, char* password);
 
+int LIST_routine(int sockD, char* path, char* login, char* password, char* list_buffer);
+
 int send_GET(int sockD, char* path, char* login, char* password);
 
 int send_PUT(int sockD, char* path, char* login, char* password);
 
 int send_DEL(int sockD, char* path, char* login, char* password, bool force_flag);
 
+int DEL_routine(int sockD, char* path, char* login, char* password, char* response);
+
 int send_MKDIR(int sockD, char* path, char* login, char* password);
+
+int MKDIR_routine(int sockD, char* path, char* login, char* password, char* response);
 
 int convert(unsigned long long* result, char* str);
 

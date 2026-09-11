@@ -472,7 +472,7 @@ int send_LIST(int sockD, char* path, char* login, char* password) {
  * -6 if error occured while sending list.
  * 1 if server sent an error message instead of list.
  */
-int LIST_routine(int sockD, char* path, char* login, char* password, char* list_buffer) {
+int LIST_routine(int sockD, char* path, char* login, char* password, char** list_buffer) {
     char status;
     
     status = send_LIST(sockD, path, login, password);
@@ -493,19 +493,22 @@ int LIST_routine(int sockD, char* path, char* login, char* password, char* list_
         return -4;
     }
 
-    list_buffer = (char*)malloc(sizeof(char) * (prefix + 1));
+    *list_buffer = (char*)malloc(sizeof(char) * (prefix + 1));
 
-    status = recv_message(sockD, list_buffer, prefix);
+    status = recv_message(sockD, *list_buffer, prefix);
+
+
+
     if(status == -1) {
-        free(list_buffer);
+        free(*list_buffer);
         return -5;
     }
     else if(status == -2) {
-        free(list_buffer);
+        free(*list_buffer);
         return -6;
     }
 
-    if(strncasecmp(list_buffer, "ERROR", 5) == 0) {
+    if(strncasecmp(*list_buffer, "ERROR", 5) == 0) {
         return 1;
     }
 
@@ -523,13 +526,13 @@ int LIST_routine(int sockD, char* path, char* login, char* password, char* list_
  * @return 0 if execution successul
  * 
  */
-int LIST_to_json(char* list_buffer, char* list_json) {
+int LIST_to_json(char* list_buffer, char** list_json) {
     
     //czytamy plik za plikiem
     
     //wstawiamy [ jako początek listy obiektów.
-    list_json = (char*)malloc(sizeof(char) * 2);
-    snprintf(list_json, sizeof(char) * 2, "[");
+    *list_json = (char*)malloc(sizeof(char) * 2);
+    snprintf(*list_json, sizeof(char) * 2, "[");
     bool last;
     //wartość wskazująca na następny niezapisany char w list_json
     int next_to_write = 1;
@@ -598,17 +601,17 @@ int LIST_to_json(char* list_buffer, char* list_json) {
         //realloc
         //w zależności czy to ostatni obiekt
         if(last) {
-            list_json = realloc(list_json, sizeof(char) * (strlen(list_json) + 9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3));
-            snprintf(list_json + next_to_write, sizeof(char) * (9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3), "{\"name\":\"%s\",\"type\":%c,\"size\":%lld,\"mtime\":%lld}]", filename, type, file_size, last_mod);
+            *list_json = realloc(*list_json, sizeof(char) * (strlen(*list_json) + 9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3));
+            snprintf(*list_json + next_to_write, sizeof(char) * (9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3), "{\"name\":\"%s\",\"type\":%c,\"size\":%lld,\"mtime\":%lld}]", filename, type, file_size, last_mod);
         }
         else {
-            list_json = realloc(list_json, sizeof(char) * (strlen(list_json) + 9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3));
-            snprintf(list_json + next_to_write, sizeof(char) * (9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3), "{\"name\":\"%s\",\"type\":%c,\"size\":%lld,\"mtime\":%lld},", filename, type, file_size, last_mod);
+            *list_json = realloc(*list_json, sizeof(char) * (strlen(*list_json) + 9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3));
+            snprintf(*list_json + next_to_write, sizeof(char) * (9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3), "{\"name\":\"%s\",\"type\":%c,\"size\":%lld,\"mtime\":%lld},", filename, type, file_size, last_mod);
         }
         
         free(filename);
         //po dopisaniu zmieniamy next_to_write na strlen jsona
-        next_to_write = strlen(list_json);
+        next_to_write = strlen(*list_json);
 
 
 

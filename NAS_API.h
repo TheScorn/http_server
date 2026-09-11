@@ -26,9 +26,9 @@ int LOGINTEST_routine(int sockD, char* login, char* password);
 
 int send_LIST(int sockD, char* path, char* login, char* password);
 
-int LIST_routine(int sockD, char* path, char* login, char* password, char* list_buffer);
+int LIST_routine(int sockD, char* path, char* login, char* password, char** list_buffer);
 
-int LIST_to_json(char* list_buffer, char* list_json);
+int LIST_to_json(char* list_buffer, char** list_json);
 
 int send_GET(int sockD, char* path, char* login, char* password);
 

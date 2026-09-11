@@ -41,6 +41,10 @@ void *handle_client(void *arg) {
 
 
     free(args);
+
+    #ifdef DEBUG
+    printf("DEBUG mode: args assigned and freed.\n");
+    #endif
     //trzeba zaimplementować sprawdzanie typu połączenia
     //rozbić tą funkcję na kilka mniejszych
     //0: NONE - nierozpoznane połączenie
@@ -744,6 +748,9 @@ void *handle_client(void *arg) {
 
     else if(connection_type == NAS) {
 
+        #ifdef DEBUG
+        printf("DEBUG mode: NAS connection type entered.\n");
+        #endif
         //obojętnie jaki jest typ połączenia NAS i tak trzeba zrobić auth
         //wyciągnąć login i hasło do NAS
         // jdskasdmakdadw
@@ -812,12 +819,18 @@ void *handle_client(void *arg) {
 
         client_info.logged_in = true;
 
+        #ifdef DEBUG
+        printf("DEBUG mode: authorization passed with NAS credentials: %s:%s\n", client_info.NAS_username, client_info.NAS_password);
+        #endif
 
         //po zalogowaniu wyciągamy ścieżkę i typ wiadomości NAS
         size_t path_len = NAS_matches[2].rm_eo - NAS_matches[2].rm_so;
         char* path = (char*)malloc(sizeof(char) * (1 + path_len + 1));
         snprintf(path, sizeof(char) * (1 + path_len + 1), "/%s", buffer + NAS_matches[2].rm_so);
 
+        #ifdef DEBUG
+        printf("DEBUG mode: path: %s\n", path);
+        #endif
 
         //łączenie z NAS
         int sockD = socket(AF_INET, SOCK_STREAM, 0);
@@ -832,17 +845,30 @@ void *handle_client(void *arg) {
             //tu trzeba zrobić info o braku połączenia z NAS
         }
 
+        #ifdef DEBUG
+        printf("DEBUG mode: connected to NAS.\n");
+        #endif
+
         //sprawdzamy która komenda została wpisana
         size_t req_len = NAS_matches[1].rm_eo - NAS_matches[1].rm_so;
         char* req = (char*)malloc(sizeof(char) * (req_len + 1));
-        snprintf(req, sizeof(char) * (req_len + 1), "%s", buffer + NAS_matches[2].rm_so);
+        snprintf(req, sizeof(char) * (req_len + 1), "%s", buffer + NAS_matches[1].rm_so);
         free(buffer);
+
+        #ifdef DEBUG
+        printf("DEBUG mode: buffer freed. req: %s\n", req);
+        #endif
 
 
         if(strcasecmp(req, "LIST") == 0) {
             free(req);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: LIST handle entered, req freed.\n");
+            #endif
+
             char* list;
-            int list_routine_status = LIST_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, list);
+            int list_routine_status = LIST_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, &list);
             if(list_routine_status < 0) {
                 //tu też wypadałoby pokazywać info na stronie
                 free(path);
@@ -862,10 +888,19 @@ void *handle_client(void *arg) {
             close(sockD);
             free(path);
 
+            #ifdef DEBUG
+            printf("DEBUG mode: LIST_routine returned with success. path freed. list: %s\n", list);
+            #endif
+
             char* list_json;
 
-            LIST_to_json(list, list_json);
+            LIST_to_json(list, &list_json);
             free(list);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: LIST_to_json ended. list freed. list_json: %s\n", list_json);
+            #endif
+
             size_t content_len = strlen(list_json);
 
             char* message = (char*)malloc(sizeof(char) * (140 + content_len));
@@ -878,6 +913,10 @@ void *handle_client(void *arg) {
 
             free(list_json);
             size_t message_len = strlen(message);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: whole message: %s\n", message);
+            #endif
 
             size_t total = 0;
             while(total < message_len) {
@@ -894,7 +933,13 @@ void *handle_client(void *arg) {
             free(message);
             close(client_fd);
 
+            #ifdef DEBUG
+            printf("DEBUG mode: json sent. message freed. client_fd closed. returning NULL.\n");
+            #endif
+
+            return NULL;
         }
+        /*
         else if(strcasecmp(req, "DEL") == 0) {
 
         }
@@ -907,14 +952,30 @@ void *handle_client(void *arg) {
         else if(strcasecmp(req, "PUT") == 0) {
 
         }
+        */
         //W przypadku PUT trzeba sprawdzić jeszcze nagłówki
+        else {
+            #ifdef DEBUG
+            printf("DEBUG mode: else entered.\n");
+            #endif
 
+            fprintf(stderr, "Unknown NAS command type: %s entered despite passing regex.\n", req);
+
+            free(req);
+            regfree(&regex);
+            close(sockD);
+            close(client_fd);
+            
+            #ifdef DEBUG
+            printf("DEBUG mode: req freed, regex freed, sockD closed, client_fd closed. Returning.\n");
+            #endif
+            return NULL;
+        }
         //W przypadku GET chyba po prostu wysyłamy plik
 
 
 
-        regfree(&regex);
-        free(buffer);
+        
         return NULL;
     }
 

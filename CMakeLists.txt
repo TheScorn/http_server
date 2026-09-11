@@ -48,3 +48,10 @@ set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
 target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP NAS_API)
+
+option(ENABLE_DEBUG "Enable DEBUG mode" OFF)
+
+if(ENABLE_DEBUG)
+    target_compile_definitions(http_handler PRIVATE DEBUG)
+    target_compile_definitions(NAS_API PRIVATE DEBUG)
+endif()

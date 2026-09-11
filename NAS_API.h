@@ -5,6 +5,11 @@
 #ifndef NAS_API
 #define NAS_API
 
+
+enum Filetypes {
+    FILET, DIRT, LINKT
+};
+
 int send_ACCEPT(int sockD);
 
 int send_REFUSE(int sockD);
@@ -22,6 +27,8 @@ int LOGINTEST_routine(int sockD, char* login, char* password);
 int send_LIST(int sockD, char* path, char* login, char* password);
 
 int LIST_routine(int sockD, char* path, char* login, char* password, char* list_buffer);
+
+int LIST_to_json(char* list_buffer, char* list_json);
 
 int send_GET(int sockD, char* path, char* login, char* password);
 
@@ -42,5 +49,7 @@ int recv_convert_prefix(int sockD, unsigned long long* prefix);
 char* add_prefix(char* message);
 
 int recv_message(int sockD, char* buffer, unsigned long long message_len);
+
+int get_int_len(unsigned long long number);
 
 #endif

@@ -19,6 +19,10 @@ function setLoginInfo() {
     }
 }
 
+function setServerVersionInfo() {
+    document.getElementById("versionField").innerText = serverVersionMajor.toString() + "." + serverVersionMinor.toString();
+}
+
 function mainPageOnClick() {
     window.location.href = "main_page.html";
 }
@@ -62,4 +66,5 @@ async function GETNASLIST(path) {
 
 setServerVersionInfo();
 setLoginInfo();
+GETNASLIST("");
 

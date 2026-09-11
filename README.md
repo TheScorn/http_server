@@ -14,6 +14,10 @@ Poprawki
 4. Ulepszenie PPHP tak by nie korzystało z regexa (mniejsze zużycie pamięci).
 5. Poprawki w regexach z POST tak żeby były bardziej konkretne.
 6. Czasowe usuwanie starych tokenów. Ważne jeśli serwer miałby dłużej działać nierestartowany.
+7. W przypadku braku połączenia z NAS (error in connect) trzeba wysłaś jakieś info na stronę
+8. Każdy error serwera NAS powinien być wyświetlany na stronie.
+9. Szczególnie errory wysyłane dosłownie przez NAS do http
+
 
 Plan na NAS
 1. inicjalizacja danych serwera NAS (IP + port) - DONE
@@ -29,6 +33,8 @@ Plan na NAS
 10. Wysyłanie odpowiedzi na stronę.
 
 TERAZ napisać rotine dla każdego typu reqestu bazując na Cli
+Dla GET i PUT nie piszamy gotowej funkcji. W trakcie odbierania,
+w obu trzeba będzie co jakiś czas wysyłać jeśli nie chcemy zapisywać całego pliku. 
 
 Plan endpointów
 Endpointy będą wysyłane z POST

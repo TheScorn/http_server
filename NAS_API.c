@@ -513,6 +513,119 @@ int LIST_routine(int sockD, char* path, char* login, char* password, char* list_
 
 }
 
+/**
+ * @brief Function for creating list of files as json
+ * 
+ * @param list_buffer pointer to null-termiated string containing raw list message from NAS
+ * 
+ * @param list_json char pointer where json formatted list should be stored
+ * 
+ * @return 0 if execution successul
+ * 
+ */
+int LIST_to_json(char* list_buffer, char* list_json) {
+    
+    //czytamy plik za plikiem
+    
+    //wstawiamy [ jako początek listy obiektów.
+    list_json = (char*)malloc(sizeof(char) * 2);
+    snprintf(list_json, sizeof(char) * 2, "[");
+    bool last;
+    //wartość wskazująca na następny niezapisany char w list_json
+    int next_to_write = 1;
+
+    char* file_size_buffer = (char*)malloc(sizeof(char) * 17);
+    char* last_mod_buffer = (char*)malloc(sizeof(char) * 17);
+    char* nml_buffer = (char*)malloc(sizeof(char) * 5);
+    char* filename;
+
+    uint16_t namelength;
+    unsigned long long file_size;
+    unsigned long long last_mod;
+    int file_size_len;
+    int last_mod_len;
+
+    enum Filetypes ft;
+    char type;
+    int reader = 0;
+    while(reader < strlen(list_buffer)) {
+        type = *(list_buffer + reader);
+        if(type == '0') {
+            ft = FILET;
+        }
+        else if(type == '1') {
+            ft = DIRT;
+        }
+        else {
+            ft = LINKT;
+        }
+
+        reader += 1;
+
+        //czytamy 16, konwertujemy i zapisujemy wielkość pliku
+        snprintf(file_size_buffer, 17, "%s", list_buffer + reader);
+        file_size = (unsigned long long)strtoull(file_size_buffer, NULL, 16);
+        
+        reader += 16;
+        
+        //czytamy 16, konwertujemy na dec
+        snprintf(last_mod_buffer, 17, "%s", list_buffer + reader);
+        last_mod = (unsigned long long)strtoull(last_mod_buffer, NULL, 16);
+
+        reader += 16;
+
+        //czytamy 4 i zapisujemy wielkość nazwy
+        snprintf(nml_buffer, 5, "%s", list_buffer + reader);
+        namelength = (uint16_t)strtoul(nml_buffer, NULL, 16);
+
+        reader += 4;
+
+        filename = (char*)malloc(sizeof(char) * (namelength + 1));
+        snprintf(filename, sizeof(char) * (namelength + 1), "%s", list_buffer + reader);
+
+
+        //ile miejsca to wszystko zajmie
+        //{"name":"{nazwa}","type":{0/1/2},"size":{size},"mtime":{mtime}}
+        file_size_len = get_int_len(file_size);
+        last_mod_len = get_int_len(last_mod);
+
+        if(reader + namelength + 2 > strlen(list_buffer)) {
+            last = true;
+        }
+        else {
+            last = false;
+        }
+        //realloc
+        //w zależności czy to ostatni obiekt
+        if(last) {
+            list_json = realloc(list_json, sizeof(char) * (strlen(list_json) + 9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3));
+            snprintf(list_json + next_to_write, sizeof(char) * (9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3), "{\"name\":\"%s\",\"type\":%c,\"size\":%lld,\"mtime\":%lld}]", filename, type, file_size, last_mod);
+        }
+        else {
+            list_json = realloc(list_json, sizeof(char) * (strlen(list_json) + 9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3));
+            snprintf(list_json + next_to_write, sizeof(char) * (9 + namelength + 18 + file_size_len + 9 + last_mod_len + 3), "{\"name\":\"%s\",\"type\":%c,\"size\":%lld,\"mtime\":%lld},", filename, type, file_size, last_mod);
+        }
+        
+        free(filename);
+        //po dopisaniu zmieniamy next_to_write na strlen jsona
+        next_to_write = strlen(list_json);
+
+
+
+        reader += namelength;
+
+
+    }
+
+
+    free(file_size_buffer);
+    free(last_mod_buffer);
+    free(nml_buffer);
+
+    return 0;
+
+}
+
 
 /**
  * @brief Sending GET to NAS server.
@@ -809,5 +922,20 @@ int MKDIR_routine(int sockD, char* path, char* login, char* password, char* resp
     }
     free(response);
     return 0;
+
+}
+
+int get_int_len(unsigned long long number) {
+    int length = 0;
+
+    if(number == 0) {
+        return 1;
+    }
+
+    while(number > 0) {
+        number /= 10;
+        length++;
+    }
+    return length;
 
 }

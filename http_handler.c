@@ -1,6 +1,8 @@
 #include "http_server_header.h"
 #include "PPHP.h"
+#include "NAS_API.h"
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -818,7 +820,96 @@ void *handle_client(void *arg) {
 
 
         //łączenie z NAS
+        int sockD = socket(AF_INET, SOCK_STREAM, 0);
 
+        int connect_status = connect(sockD, (struct sockaddr*)&NAS_add, sizeof(NAS_add));
+        if(connect_status == -1) {
+            fprintf(stderr, "Could not connect to NAS.\n");
+            free(path);
+            free(buffer);
+            close(client_fd);
+            return NULL;
+            //tu trzeba zrobić info o braku połączenia z NAS
+        }
+
+        //sprawdzamy która komenda została wpisana
+        size_t req_len = NAS_matches[1].rm_eo - NAS_matches[1].rm_so;
+        char* req = (char*)malloc(sizeof(char) * (req_len + 1));
+        snprintf(req, sizeof(char) * (req_len + 1), "%s", buffer + NAS_matches[2].rm_so);
+        free(buffer);
+
+
+        if(strcasecmp(req, "LIST") == 0) {
+            free(req);
+            char* list;
+            int list_routine_status = LIST_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, list);
+            if(list_routine_status < 0) {
+                //tu też wypadałoby pokazywać info na stronie
+                free(path);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "Error number: %d occured in LIST_routine.\n", list_routine_status);
+                return NULL;
+            }
+            else if(list_routine_status > 0) {
+                free(path);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "NAS returned an error: %s\n.", list);
+                free(list);
+                return NULL;
+            }
+            close(sockD);
+            free(path);
+
+            char* list_json;
+
+            LIST_to_json(list, list_json);
+            free(list);
+            size_t content_len = strlen(list_json);
+
+            char* message = (char*)malloc(sizeof(char) * (140 + content_len));
+            snprintf(message, sizeof(char) * (140 + content_len), "HTTP/1.1 200 OK\r\n"
+                                                                "Content-Type: application/json\r\n"
+                                                                "Content-Length: %ld\r\n"
+                                                                "Connection: close\r\n"
+                                                                "\r\n"
+                                                                "%s", content_len, list_json);
+
+            free(list_json);
+            size_t message_len = strlen(message);
+
+            size_t total = 0;
+            while(total < message_len) {
+                ssize_t n = send(client_fd, message + total, message_len - total, 0);
+                if(n <= 0) {
+                    close(client_fd);
+                    free(message);
+                    fprintf(stderr, "Error occured during list json send.\n");
+                    return NULL;
+                }
+                total += n;
+
+            }
+            free(message);
+            close(client_fd);
+
+        }
+        else if(strcasecmp(req, "DEL") == 0) {
+
+        }
+        else if(strcasecmp(req, "MKDIR") == 0) {
+
+        }
+        else if(strcasecmp(req, "GET") == 0) {
+
+        }
+        else if(strcasecmp(req, "PUT") == 0) {
+
+        }
+        //W przypadku PUT trzeba sprawdzić jeszcze nagłówki
+
+        //W przypadku GET chyba po prostu wysyłamy plik
 
 
 

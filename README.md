@@ -26,20 +26,34 @@ Plan na NAS
 (jeśli niepowodzenie to np. wyłączamy możliwość wejścia na podstronę NAS) - DONE
 4. Obsługa wpisywania IP i portu NAS jako argumentów main. - DONE
 5. Zaplanowanie schematu żądania które będą przekazywane do NAS - DONE
-6. Funkcja żądania listy w js na stronie uruchamiana po odpaleniu strony.
-7. Parsowanie żądania i wyciąganie z db potrzebnego info do użycia funkcji z NAS_API.
-8. Łączenie się z NAS gdy wymaga tego żądanie.
-9. Parsowanie odpowiedzi z NAS i zmienianie jej w format json.
-10. Wysyłanie odpowiedzi na stronę.
+6. Funkcja żądania listy w js na stronie uruchamiana po odpaleniu strony. - DONE
+7. Parsowanie żądania i wyciąganie z db potrzebnego info do użycia funkcji z NAS_API. - DONE
+8. Łączenie się z NAS gdy wymaga tego żądanie. - DONE
+9. Parsowanie odpowiedzi z NAS i zmienianie jej w format json. - DONE
+10. Wysyłanie odpowiedzi na stronę. - DONE
 
 TERAZ napisać rotine dla każdego typu reqestu bazując na Cli
 Dla GET i PUT nie piszamy gotowej funkcji. W trakcie odbierania,
 w obu trzeba będzie co jakiś czas wysyłać jeśli nie chcemy zapisywać całego pliku. 
 
-Plan endpointów
+Plan endpointów:
 Endpointy będą wysyłane z POST
 Ścieżka będzie się zaczynać od NAS
 Po NAS ścieżka będzie tłumaczyć komendę z jakiej chce korzystać.
 Po komendzie podana będzie faktyczna ścieżka do pliku.
 Przykład POST /NAS/LIST/thescorn
 Albo POST /NAS/PUT/admin
+
+
+Założenia dla logiki na stronie
+Pliki mają własność name i typ
+Funkcja show przyjmuje ścieżkę.
+
+Jeśli kliknie się folder to do ścieżki jest doklejana nazwa folderu i odpalana jest znowu funkcja show
+
+Ścieżka powinna się zmieniać dynamicznie.
+
+Obiekty do pokazywania musimy zrobić oddzielnie tak żeby mogły zawierać też info o rozszerzeniu
+
+Podczas show powinniśmy też stworzyć sztuczny obiekt rodzica przez którego będzie można wrócić wyżej (jako jakiś przycisk back)
+

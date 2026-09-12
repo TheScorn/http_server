@@ -46,3 +46,38 @@
     margin: 4px;
     float: right;
 }
+
+.NAS-window-outer {
+    min-height: 225px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 100px;
+    margin-right: 100px;
+    
+}
+
+.NAS-top-bar {
+    min-height: 25px;
+    width: 100%;
+    background-color: darkgray;
+}
+
+.NAS-window-inner {
+    min-height: 200px;
+    width: 100%;
+    background-color: lightgray;
+}
+
+.NAS-path-span {
+    margin-right: 40px;
+}
+
+.NAS-file-button {
+    min-height: 25px;
+    width: 100%;
+}
+
+.NAS-dir-button {
+    min-height: 25px;
+    width: 100%;
+}

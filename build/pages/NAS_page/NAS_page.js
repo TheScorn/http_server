@@ -45,8 +45,10 @@ async function logoutButtonOnClick() {
     }
 }
 
-let current_path = "";
+let current_path = "/";
 let parent_path = null;
+
+const list_req = "/NAS/LIST";
 
 async function GETNASLIST(path) {
     if(!logged_in) {
@@ -56,7 +58,7 @@ async function GETNASLIST(path) {
     }
 
     try {
-        const response = await fetch("/NAS/LIST/" + path, {
+        const response = await fetch(list_req.concat(path), {
             method: "POST",
             credentials: "include"
         });
@@ -115,7 +117,13 @@ function createButtons(files) {
 
         if(file.type === 1) {
             button.classList.add("NAS-dir-button");
-            //button.addEventListener("dblclick", changeDir);
+            button.addEventListener("dblclick", function() {
+                parent_path = current_path;
+                current_path = current_path + file.filename + "/";
+                console.log(current_path);
+                setCurrentPathField(current_path);
+                refresh_list(current_path);
+            });
         }
         else {
             button.classList.add("NAS-file-button");
@@ -144,10 +152,53 @@ async function show_list(path) {
 
 }
 
+function clear_list() {
+    const container = document.getElementById("NAS-window-inner");
+    container.innerHTML = "";
+}
 
+async function refresh_list(path) {
+    clear_list();
+    await show_list(path);
+}
 
+async function backToParent() {
+    if(parent_path == null) { //current "/", parent null
+        return null;
+    }
+    //wszedzie poza przypadkiem powyżej gdzie nie możemy się już cofnąć robimy
+    //current = parent a parent zmieniamy w zależności gdzie jesteśmy
+    current_path = parent_path;
+
+    if(parent_path == "/") {
+        parent_path = null;
+        refresh_list(current_path);
+        setCurrentPathField(current_path);
+        return null;
+    }
+
+    parent_path = parent_path.slice(0, -1);
+    const slash = parent_path.lastIndexOf('/');
+    parent_path = parent_path.slice(0, slash);
+
+    
+    //przykład     current /admin/, parent "/"
+    //             current /admin/dir1/, parent "/admin/"
+    //             current admin/dir1/dir2 parent admin/dir1
+
+    //jeśli znajdziemy / w parent to ustawiamy current = parent a 
+
+    refresh_list(current_path);
+    setCurrentPathField(current_path);
+}
+
+function setCurrentPathField(path) {
+    const field = document.getElementById("NAS-path-span");
+    field.innerText = path;
+}
 
 setServerVersionInfo();
 setLoginInfo();
-//GETNASLIST(current_pathpath);
-show_list(current_path);
+setCurrentPathField(current_path);
+
+refresh_list(current_path);

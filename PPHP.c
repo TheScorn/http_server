@@ -176,3 +176,116 @@ int PPHP_key_val_insert(char* buffer, size_t buffer_size, char* unprocessed, cha
 
     return 0;
 }
+
+
+/**
+ * @brief Function for finding indexes of next field
+ * 
+ * @param buffer pointer to null-terminated string 
+ * 
+ * @param matches pointer to matches_struct where found indexes are stored
+ */
+int find_matches(char* buffer, struct matches_struct* matches) {
+    matches->outer_start = strstr(buffer, "<<");
+    if(matches->outer_start == NULL) {
+        return -1;
+    }
+
+    matches->inner_start = matches->outer_start + 2;
+
+    matches->inner_end = strstr(buffer, ">>");
+    if(matches->inner_end == NULL) {
+        return -2;
+    }
+    matches->inner_end--;
+
+    matches->outer_end = matches->inner_end + 2;
+
+
+    return 0;
+}
+
+/**
+ * @brief Function for inserting values to coresponding fields
+ * 
+ * Functions seeks for fields, then finds variable inside and checks if it's known. If so, inserts corresponding value from values.
+ * Version 2 does not use regex so its less resource-hungry.
+ * 
+ * @param buffer space for processed text
+ * 
+ * @param buffer_size size of buffer space
+ * 
+ * @param unproessed char pointer to unprocessed text
+ * 
+ * @param keys list of char arrays containing keys to be searched for inside fields. Assuming keys are not longer than 20 characters.
+ * 
+ * @param values list of char arrays containg values with indexes corresponding with keys. Assuming the values are not longer then 30 characters
+ * 
+ * @param dict_len number of keys and values
+ * 
+ * @return 0 if execution successful, -1 if unknown variable found.
+ * 
+ */
+int PPHP_key_val_insert2(char* buffer, size_t buffer_size, char* unprocessed, char keys[][20], char values[][30], int dict_len) {
+    
+    //dzięki temu możemy od razu tworzyć temp_buffer na bazie bufora i nie martwimy się że buffer będzie pusty jesli nie znajdziemy zmiennej
+    strncpy(buffer, unprocessed, buffer_size);
+    char* before_field;
+    char* after_field;
+    char* var;
+    char* val;
+    char* temp_buffer;
+    int index;
+    bool value_found;
+
+    struct matches_struct matches;
+    
+
+    //mamy bufor
+    //dostajemy zawsze wskaźniki w tym buforze
+    //w outer start wstawiamy \0, robimy miejsce na before_field
+    //var to inner_start
+
+
+    while(find_matches(buffer, &matches) == 0) {
+        before_field = buffer;
+        *matches.outer_start = '\0';
+        //start lsat\0<var>>last
+
+        var = matches.inner_start;
+        *(matches.inner_end + 1) = '\0';
+
+        value_found = false;
+        for(index = 0; index < dict_len; index++) {
+            if(strcasecmp(var, keys[index]) == 0) {
+                val = values[index];
+                value_found = true;
+                break;
+            }
+        }
+        if(!value_found) {
+            return -1;
+        }
+
+        
+        
+        after_field = (matches.outer_end + 1);
+        if(*after_field == '\0') {
+            temp_buffer = (char*)malloc(sizeof(char) * (strlen(before_field) + strlen(val) + 1));
+            snprintf(temp_buffer, sizeof(char) * (strlen(before_field) + strlen(val) + 1), "%s%s", before_field, val);
+        }
+        else {
+            temp_buffer = (char*)malloc(sizeof(char) * (strlen(before_field) + strlen(val) + strlen(after_field) + 1));
+            snprintf(temp_buffer, sizeof(char) * (strlen(before_field) + strlen(val) + strlen(after_field) + 1), "%s%s%s", before_field, val, after_field);
+        }
+
+        //uwalniamy bufor
+        free(buffer);
+        buffer = temp_buffer;
+        temp_buffer = NULL;
+
+
+    }
+
+    return 0;
+}

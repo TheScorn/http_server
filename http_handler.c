@@ -93,7 +93,7 @@ void *handle_client(void *arg) {
         connection_type = LOGOUT;
     }
 
-    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ])*[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ]*)[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
     regmatch_t NAS_matches[4];
     if(regexec(&regex, buffer, 4, NAS_matches, 0) == 0) {
         connection_type = NAS;
@@ -277,7 +277,7 @@ void *handle_client(void *arg) {
                 memcpy(vals[3], "null", 5);
 
                 char* complete_response = (char*)calloc(response_len + 1, 1);
-                int PPHP_status = PPHP_key_val_insert(complete_response, response_len + 1, response, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
+                int PPHP_status = PPHP_key_val_insert2(complete_response, response_len + 1, response, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
 
                 response_len = strlen(complete_response);
 
@@ -749,7 +749,7 @@ void *handle_client(void *arg) {
     else if(connection_type == NAS) {
 
         #ifdef DEBUG
-        printf("DEBUG mode: NAS connection type entered.\n");
+        printf("DEBUG mode: NAS connection type entered with buffer: %s\n", buffer);
         #endif
         //obojętnie jaki jest typ połączenia NAS i tak trzeba zrobić auth
         //wyciągnąć login i hasło do NAS
@@ -825,6 +825,9 @@ void *handle_client(void *arg) {
 
         //po zalogowaniu wyciągamy ścieżkę i typ wiadomości NAS
         size_t path_len = NAS_matches[2].rm_eo - NAS_matches[2].rm_so;
+        #ifdef DEBUG
+        printf("DEBUG mode: path_lel from regex matches = %ld\n", path_len);
+        #endif
         char* path = (char*)malloc(sizeof(char) * (1 + path_len + 1));
         snprintf(path, sizeof(char) * (1 + path_len + 1), "/%s", buffer + NAS_matches[2].rm_so);
 

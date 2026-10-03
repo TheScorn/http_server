@@ -172,7 +172,7 @@ async function backToParent() {
 
     if(parent_path == "/") {
         parent_path = null;
-        refresh_list(current_path);
+        await refresh_list(current_path);
         setCurrentPathField(current_path);
         return null;
     }

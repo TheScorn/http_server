@@ -77,6 +77,19 @@ function find_extension(filename) {
     return dot === -1 ? '' : filename.slice(dot + 1);
 }
 
+function format_date(timestamp) {
+    const date = new Date(timestamp);
+
+    return(
+        String(date.getDate()).padStart(2, '0') + '/' +
+        String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+        date.getFullYear() + ' ' +
+        String(date.getHours()).padStart(2, '0') + ':' + 
+        String(date.getMinutes()).padStart(2, '0') + ':' +
+        String(date.getSeconds()).padStart(2, '0')
+    );
+}
+
 function make_objects(response) {
     console.log(response);
 
@@ -91,7 +104,7 @@ function make_objects(response) {
             ext = find_extension(response[i].name);
         }
 
-        mod_date = new Date(response[i].mtime * 1000);
+        mod_date = format_date(response[i].mtime * 1000);
 
         obj = {
             filename: response[i].name,
@@ -113,7 +126,24 @@ function createButtons(files) {
     files.forEach(file => {
         const button = document.createElement("button");
 
-        button.textContent = file.filename;
+        //tutaj trzeba wstawić całego diva z konkretną klasą w przycisk
+        //ma być:
+        //ikonka nazwa                            (ostatnia modyfikacja) (wielkość)
+
+        const divFront = document.createElement('div');
+        const divBack = document.createElement('div');
+        divBack.className = 'NAS-button-back';
+        divFront.className = 'NAS-button-front';
+
+        
+        //button.textContent = file.filename; to wstawiamy w diva
+        divFront.textContent = file.filename;
+        divBack.textContent = file.size + "B" + "        " + file.mtime;
+
+
+        button.appendChild(divFront);
+        button.appendChild(divBack);
+
 
         if(file.type === 1) {
             button.classList.add("NAS-dir-button");
@@ -188,7 +218,7 @@ async function backToParent() {
 
     //jeśli znajdziemy / w parent to ustawiamy current = parent a 
 
-    refresh_list(current_path);
+    await refresh_list(current_path);
     setCurrentPathField(current_path);
 }
 

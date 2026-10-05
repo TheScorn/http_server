@@ -73,11 +73,26 @@
 }
 
 .NAS-file-button {
+    display: flex;
     min-height: 25px;
     width: 100%;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .NAS-dir-button {
+    display: flex;
     min-height: 25px;
     width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.NAS-button-front {
+    display: flex;
+}
+
+.NAS-button-back {
+    display: flex;
+    
 }

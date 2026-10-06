@@ -462,7 +462,7 @@ int send_LIST(int sockD, char* path, char* login, char* password) {
  * If function returns with value > 0,
  * this string will be set to the error recieved from NAS server.
  * In this case it should be freed as well.
- * On fatal errors (return > 0) list_buffer will be freed automatically.
+ * On fatal errors (return < 0) list_buffer will be freed automatically.
  * 
  * @return 0 if execution successful, -1 if error occured inside send_LIST,
  * -2 if server closed connection while sending prefix,

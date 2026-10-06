@@ -18,11 +18,17 @@
             </div>
             
             <div class="page-main-body">
-                Miejsce na obsługę NAS
+                
                 <div class="NAS-window-outer">
                     <div class="NAS-top-bar">
-                        <button id="NAS-return-button" class="NAS-return-button" onclick="backToParent()">&lt;</button>
-                        <span id="NAS-path-span" class="NAS-path-span"></span>
+                        <div class="NAS-top-bar-front">
+                            <button id="NAS-return-button" class="NAS-return-button" onclick="backToParent()">&lt;</button>
+                            <span id="NAS-path-span" class="NAS-path-span"></span>
+                        </div>
+                        <div class="NAS-top-bar-back">
+                            <button id="NAS-mkdir-button" class="NAS-mkdir-button" onclick="newDirOnClick()">New directory</button>
+                        </div>
+
                     </div>
                     <div class="NAS-window-inner" id="NAS-window-inner">
 
@@ -31,6 +37,20 @@
             </div>
 
         </div>
+
+        <dialog id="dirNameDialog">
+            <form method="dialog">
+                <label>
+                    Directory name:
+                    <input id="dirNameField" type="text">
+                </label>
+
+                <button value="cancel">Cancel</button>
+                <button value="ok">OK</button>
+            </form>
+        </dialog>
+
+
     </body>
 
     <script src="NAS_page.js"></script>

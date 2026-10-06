@@ -49,10 +49,11 @@ let current_path = "/";
 let parent_path = null;
 
 const list_req = "/NAS/LIST";
+const mkdir_req = "/NAS/MKDIR";
 
 async function GETNASLIST(path) {
     if(!logged_in) {
-        console.error("Function should not be used if user is not logged in");
+        console.error("Function should not be used if user is not logged in.");
         window.location.href = "main_page.html";
         return null;
     }
@@ -71,6 +72,9 @@ async function GETNASLIST(path) {
         return null;
     }
 }
+
+
+
 
 function find_extension(filename) {
     const dot = filename.lastIndexOf('.');
@@ -220,6 +224,51 @@ async function backToParent() {
 
     await refresh_list(current_path);
     setCurrentPathField(current_path);
+}
+
+const dialog = document.getElementById("dirNameDialog");
+const input = document.getElementById("dirNameField");
+
+
+
+async function MKDIRNAS(path, filename) {
+    if(!logged_in) {
+        console.error("Function should not be used if user is not logged in.");
+        window.location.href = "main_page.html";
+        return null;
+    }
+
+    try {
+        const response = await fetch(mkdir_req.concat(path).concat(filename), {
+            method: "POST",
+            credentials: "include"
+        });
+
+        return response;
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
+}
+
+
+
+async function newDirOnClick() {
+    dialog.showModal();
+    input.focus();
+
+    dialog.addEventListener("close", async () => {
+        if(dialog.returnValue === "ok") {
+            const response = await MKDIRNAS(current_path, input.value);
+            if(response.status === 201) {
+                refresh_list(current_path);
+            }
+            else {
+                console.error("Error occured on MKDIR request.");
+            }
+        }
+    }, {once: true});
+
 }
 
 function setCurrentPathField(path) {

@@ -840,12 +840,13 @@ void *handle_client(void *arg) {
 
         int connect_status = connect(sockD, (struct sockaddr*)&NAS_add, sizeof(NAS_add));
         if(connect_status == -1) {
+            //TODO wysłanie errora na stronę
             fprintf(stderr, "Could not connect to NAS.\n");
             free(path);
             free(buffer);
             close(client_fd);
             return NULL;
-            //tu trzeba zrobić info o braku połączenia z NAS
+            
         }
 
         #ifdef DEBUG
@@ -873,7 +874,7 @@ void *handle_client(void *arg) {
             char* list;
             int list_routine_status = LIST_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, &list);
             if(list_routine_status < 0) {
-                //tu też wypadałoby pokazywać info na stronie
+                //TODO tu też wypadałoby pokazywać info na stronie
                 free(path);
                 close(sockD);
                 close(client_fd);
@@ -942,13 +943,65 @@ void *handle_client(void *arg) {
 
             return NULL;
         }
+
+        else if(strcasecmp(req, "MKDIR") == 0) {
+            free(req);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: MKDIR handle entered, req freed.\n");
+            #endif
+
+            char* response;
+            int mkdir_routine_status = MKDIR_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, response);
+            if(mkdir_routine_status < 0) {
+                //TODO trzeba wysłać na stronę error z NAS
+                free(path);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "Error number: %d occured in MKDIR_routine.\n", mkdir_routine_status);
+                return NULL;
+            }
+            else if(mkdir_routine_status > 0) {
+                //TODO wysyłanie errora na stronę
+                free(path);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "NAS returned an error: %s\n.", response);
+                free(response);
+                return NULL;
+            }
+            close(sockD);
+            free(path);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: MKDIR_routine returned with success. path freed.\n");
+            #endif
+
+            char response2[] = "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: 16\r\n\r\n{\"success\":true}";
+            size_t response_len = strlen(response2);
+
+            size_t total = 0;
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response2 + total, response_len - total, 0);
+                if(n <= 0) {
+                    close(client_fd);
+                    fprintf(stderr, "Error occured during mkdir response send.\n");
+                    return NULL;
+                }
+                total += n;
+            }
+
+
+            close(client_fd);
+            return NULL;
+
+        }
+
         /*
         else if(strcasecmp(req, "DEL") == 0) {
 
         }
-        else if(strcasecmp(req, "MKDIR") == 0) {
-
-        }
+        
         else if(strcasecmp(req, "GET") == 0) {
 
         }

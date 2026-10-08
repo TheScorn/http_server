@@ -8,16 +8,14 @@ Nowe założenia do stron. Strony są albo ogólnodostępne(main, login) albo do
 
 TODO:
 Poprawki
-1. W sesji zapisywanie tylko user_id zamiast username - DONE
 2. Komunikat o błędnym logowaniu wyświetlany na stronie
-3. Dodanie komunikatów o błędach do funkcji obsługującej argumenty w main (obecna wersja jest okropnie leniwa) - DONE
-4. Ulepszenie PPHP tak by nie korzystało z regexa (mniejsze zużycie pamięci). - DONE
 5. Poprawki w regexach z POST tak żeby były bardziej konkretne.
 6. Czasowe usuwanie starych tokenów. Ważne jeśli serwer miałby dłużej działać nierestartowany.
 7. W przypadku braku połączenia z NAS (error in connect) trzeba wysłaś jakieś info na stronę
 8. Każdy error serwera NAS powinien być wyświetlany na stronie.
 9. Szczególnie errory wysyłane dosłownie przez NAS do http
 10. Automatyczne przełączanie na stronę na którą użytkownik chciał wejść po zalogowaniu
+11. Wysyłanie daty w odpowiedzi od serwa (Nie wszędzie jest a szkoda)
 
 
 Plan na NAS

@@ -50,6 +50,7 @@ let parent_path = null;
 
 const list_req = "/NAS/LIST";
 const mkdir_req = "/NAS/MKDIR";
+const del_req = "/NAS/DEL";
 
 async function GETNASLIST(path) {
     if(!logged_in) {
@@ -124,12 +125,23 @@ function make_objects(response) {
     return files;
 }
 
+ 
+const delDialog = document.getElementById("delDialog");
+const delLabel = document.getElementById("delLabel");
+const delConfirmButton = document.getElementById("delConfirmButton");
+
 function createButtons(files) {
     const container = document.getElementById("NAS-window-inner");
 
     files.forEach(file => {
-        const button = document.createElement("button");
 
+        const castDiv = document.createElement("div");
+        castDiv.className = 'NAS-cast';
+
+        //podzielimy to na 3 osobne przyciski
+        const button = document.createElement("button");
+        const downloadButton = document.createElement("button");
+        const deleteButton = document.createElement("button");
         //tutaj trzeba wstawić całego diva z konkretną klasą w przycisk
         //ma być:
         //ikonka nazwa                            (ostatnia modyfikacja) (wielkość)
@@ -144,6 +156,9 @@ function createButtons(files) {
         divFront.textContent = file.filename;
         divBack.textContent = file.size + "B" + "        " + file.mtime;
 
+        
+
+
 
         button.appendChild(divFront);
         button.appendChild(divBack);
@@ -151,20 +166,56 @@ function createButtons(files) {
 
         if(file.type === 1) {
             button.classList.add("NAS-dir-button");
-            button.addEventListener("dblclick", function() {
+            button.addEventListener("dblclick",async function() {//przechodzenie przez foldery
                 parent_path = current_path;
                 current_path = current_path + file.filename + "/";
                 console.log(current_path);
                 setCurrentPathField(current_path);
-                refresh_list(current_path);
+                await refresh_list(current_path);
             });
+
+            
+
         }
         else {
             button.classList.add("NAS-file-button");
             //button.addEventListener("dblclick", getFile);
         }
 
-        container.appendChild(button);
+        deleteButton.addEventListener("mousedown", async function() {//usuwanie folderów
+            //i tak dobrze byłoby zrobić dialog i zapytać czy na pewno
+            delLabel.innerText = "Delete \"" + file.filename + "\"?";
+            delDialog.addEventListener("close", async () => {
+                if(delDialog.returnValue === "ok") {
+                    const response = await DELNAS(current_path, file.filename);
+                    if(response.status === 200) {
+                        refresh_list(current_path);
+                    }
+                    else {
+                        console.error("Error occured on DEL request.");
+                    }
+                }
+            }, {once: true});
+            delDialog.showModal();
+            //delConfirmButton.focus();
+
+
+        });
+
+        deleteButton.innerText = "Del";
+
+        castDiv.appendChild(button);
+        castDiv.appendChild(deleteButton);
+        
+        
+
+
+
+
+
+
+
+        container.appendChild(castDiv);
     })
 
 }
@@ -231,6 +282,7 @@ const input = document.getElementById("dirNameField");
 
 
 
+
 async function MKDIRNAS(path, filename) {
     if(!logged_in) {
         console.error("Function should not be used if user is not logged in.");
@@ -251,7 +303,26 @@ async function MKDIRNAS(path, filename) {
     }
 }
 
+async function DELNAS(path, filename) {
+    if(!logged_in) {
+        console.error("Function should not be used if user is not logged in.");
+        window.location.href = "main_page.html";
+        return null;
+    }
 
+    try {
+        const response = await fetch(del_req.concat(path).concat(filename), {
+            method: "POST",
+            credentials: "include"
+        });
+
+        return response;
+    } catch(e) {
+        console.error(e);
+        return null;
+    }
+
+}
 
 async function newDirOnClick() {
     dialog.showModal();

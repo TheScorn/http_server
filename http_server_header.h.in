@@ -106,6 +106,8 @@ int drop_all_sessions();
 
 int drop_session(char* sesion_id);
 
+int last_occurence(char* str, char chr);
+
 #define VERBOSE_INIT_DEFAULT false
 #define VERBOSE_INPUT_DEFAULT false
 #define DEFAULT_PORT 54001

@@ -42,6 +42,8 @@ int send_MKDIR(int sockD, char* path, char* login, char* password);
 
 int MKDIR_routine(int sockD, char* path, char* login, char* password, char* response);
 
+int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char* response, unsigned long long* mtime, unsigned long long* filesize);
+
 int convert(unsigned long long* result, char* str);
 
 int recv_convert_prefix(int sockD, unsigned long long* prefix);
@@ -51,5 +53,7 @@ char* add_prefix(char* message);
 int recv_message(int sockD, char* buffer, unsigned long long message_len);
 
 int get_int_len(unsigned long long number);
+
+#define DEFAULT_FILE_BLOCK_SIZE 1048576
 
 #endif

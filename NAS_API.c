@@ -81,6 +81,8 @@ int send_ACK(int sockD) {
     return 0;
 }
 
+
+
 /**
  * @brief sending TEST to NAS server.
  * 
@@ -179,6 +181,7 @@ int test_NAS_connection(struct sockaddr_in* NAS_add) {
 }
 
 
+
 /**
  * @brief sending LOGINTEST to NAS server.
  * 
@@ -262,6 +265,7 @@ int LOGINTEST_routine(int sockD, char* login, char* password) {
     return 0;
 
 }
+
 
 
 /**
@@ -404,6 +408,7 @@ int recv_message(int sockD, char* buffer, unsigned long long message_len) {
     
     return 0;
 }
+
 
 
 /**
@@ -669,6 +674,152 @@ int send_GET(int sockD, char* path, char* login, char* password) {
 }
 
 /**
+ * @brief routine for sending messages before recieving files
+ * 
+ * Routine encapsulates sending GET request, recieving metadata, sending ACCEPT,
+ * comparing filesize in metadata to prefix.
+ * Note that this routine ALWAYS sends ACCEPT.
+ * User should be sure he wants to get the file.
+ * 
+ * @param sockD socket secriptor. Socket should be connected to NAS beforehand.
+ * 
+ * @param path pointer to null-terminated string with path
+ * 
+ * @param login pointer to null-terminated string with login
+ * 
+ * @param password pointer to null-terminated string with logic
+ * 
+ * @param response pointer to null-terminated string with response from NAS.
+ * This pointer will be dynamically allocated after use
+ * if this returns with value > 0 and it will contain message from server.
+ * In this case this memory needs to be manually freed.
+ * For any other return value, user should not try to free this pointer.
+ * 
+ * @param mtime pointer to unsigned long long where the last modification time will be stored.
+ * This memory needs to be allocated beforehand.
+ * 
+ * @param filesize pointer to unsigned long long where the filesize will be stored.
+ * This memory needs to be allocated beforehand.
+ * 
+ * @return 0 if execution successful, -1 if error occured while sending GET message,
+ * -2 or -14 if server closed connection while sending prefix,
+ * -3 or -15 if error occured during prefix recieve
+ * -4 or -16 if conversion error occured
+ * -5 if server closed connection while sending response
+ * -6 if error occured during response recieve
+ * -7 if mtime was not a number
+ * -8 if number does not fit in ull
+ * -9 if mtime started as a number but it had garbage in the end
+ * -10 if filesize was not a number
+ * -11 if number does not fit in ull
+ * -12 if filesize started as a number but it had garbage in the end
+ * -13 if error occured inside ACCEPT send
+ * -17 if filesize in metadata was not equal to secon prefix
+ * 
+ */
+int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char* response, unsigned long long* mtime, unsigned long long* filesize) {
+    char status;
+    if(send_GET(sockD, path, login, password) == -1) {
+        return -1;
+    }
+
+    unsigned long long prefix;
+    status = recv_convert_prefix(sockD, &prefix);
+    if(status == -1) {
+        return -2;
+    }
+    else if(status == -2) {
+        return -3;
+    }
+    else if(status == -3) {
+        return -4;
+    }
+
+    response = (char*)malloc(sizeof(char) * (prefix + 1));
+
+    status = recv_message(sockD, response, prefix);
+    if(status == -1) {
+        free(response);
+        return -5;
+    }
+    if(status == -2) {
+        free(response);
+        return -6;
+    }
+
+    //ta odpowiedź może być albo metadanymi albo ERROREM
+    //jeśli to error to wychodzimy i kończymy zabawę
+    if(strncasecmp(response, "ERROR", 5) == 0) {
+        return 1;
+    }
+
+    
+    //zbieramy typ, 
+    char type = *response;
+
+    char* last_mod_buffer = (char*)malloc(sizeof(char) * 17);
+    char* filesize_buffer = (char*)malloc(sizeof(char) * 17);
+
+    snprintf(last_mod_buffer, sizeof(char) * 17, "%s", response + 1);
+    snprintf(filesize_buffer, sizeof(char) * 17, "%s", response + 17);
+
+    free(response);
+
+
+    status = convert(mtime, last_mod_buffer);
+    free(last_mod_buffer);
+    if(status == -1) {
+        free(filesize_buffer);
+        return -7;
+    }
+    else if(status == -2) {
+        free(filesize_buffer);
+        return -8;
+    }
+    else if(status == -3) {
+        free(filesize_buffer);
+        return -9;
+    }
+
+    status = convert(filesize, filesize_buffer);
+    free(filesize_buffer);
+    if(status == -1) {
+        return -10;
+    }
+    else if(status == -2) {
+        return -11;
+    }
+    else if(status == -3) {
+        return -12;
+    }
+
+
+    //sending ACCEPT
+    if(send_ACCEPT(sockD) == -1) {
+        return -13;
+    }
+
+    //odbieramy prefix
+    status = recv_convert_prefix(sockD, &prefix);
+    if(status == -1) {
+        return -14;
+    }
+    else if(status == -2) {
+        return -15;
+    }
+    else if(status == -3) {
+        return -16;
+    }
+    else if(prefix != *filesize) {
+        return -17;
+    }
+
+    //jeśli się zgadza to wychodzimy stąd i możemy przygotować się na wysłanie pliku.
+    return 0;
+}
+
+
+/**
  * @brief Sending PUT to NAS server.
  * 
  * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
@@ -705,6 +856,7 @@ int send_PUT(int sockD, char* path, char* login, char* password) {
     free(request);
     return 0;
 }
+
 
 
 /**
@@ -773,7 +925,7 @@ int send_DEL(int sockD, char* path, char* login, char* password, bool force_flag
  * -5 if server closed connection while sending response
  * -6 if error occured during response recieve
  * -7 if unexpected message from NAS recieved
- * 1 if 
+ * 1 if error
  */
 int DEL_routine(int sockD, char* path, char* login, char* password, char* response) {
     char status;
@@ -858,7 +1010,6 @@ int send_MKDIR(int sockD, char* path, char* login, char* password) {
     return 0;
 }
 
-
 /**
  * @brief routine for sending MKDIR and recieving answer.
  * 
@@ -927,6 +1078,8 @@ int MKDIR_routine(int sockD, char* path, char* login, char* password, char* resp
     return 0;
 
 }
+
+
 
 int get_int_len(unsigned long long number) {
     int length = 0;

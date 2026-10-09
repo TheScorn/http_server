@@ -29,7 +29,7 @@ const char *get_file_extension(const char *filename) {
     const char *dot = strrchr(filename, '.');
 
     if(!dot || dot == filename) {
-        return "";
+        return NULL;
     }
 
     return dot + 1;
@@ -66,6 +66,96 @@ const char *get_mime_type(const char *file_ext) {
     else if(strcasecmp(file_ext, "jpg") == 0 || strcasecmp(file_ext, "jpeg") == 0) {
         return "image/jpeg";
     }
+    else if(strcasecmp(file_ext, "pdf") == 0) {
+        return "application/pdf";
+    }
+    else if(strcasecmp(file_ext, "csv") == 0) {
+        return "text/csv";
+    }
+    else if(strcasecmp(file_ext, "json") == 0) {
+        return "application/json";
+    }
+    else if(strcasecmp(file_ext, "xml") == 0) {
+        return "application/xml";
+    }
+    else if(strcasecmp(file_ext, "doc") == 0) {
+        return "application/msword";
+    }
+    else if(strcasecmp(file_ext, "docx") == 0) {
+        return "application/vnd.openxmlformats-officedocument.wordpressingml.document";
+    }
+    else if(strcasecmp(file_ext, "xls") == 0) {
+        return "application/vnd.ms-excel";
+    }
+    else if(strcasecmp(file_ext, "xlsx") == 0) {
+        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    }
+    else if(strcasecmp(file_ext, "ppt") == 0) {
+        return "application/vnd.ms-powerpoint";
+    }
+    else if(strcasecmp(file_ext, "pptx") == 0) {
+        return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    }
+    else if(strcasecmp(file_ext, "rtf") == 0) {
+        return "application/rtf";
+    }
+    else if(strcasecmp(file_ext, "zip") == 0) {
+        return "application/zip";
+    }
+    else if(strcasecmp(file_ext, "gz") == 0) {
+        return "application/gzip";
+    }
+    else if(strcasecmp(file_ext, "tar") == 0) {
+        return "application/x-tar";
+    }
+    else if(strcasecmp(file_ext, "7z") == 0) {
+        return "application/x-7z-compressed";
+    }
+    else if(strcasecmp(file_ext, "rar") == 0) {
+        return "application/vnd.rar";
+    }
+    else if(strcasecmp(file_ext, "gif") == 0) {
+        return "image/gif";
+    }
+    else if(strcasecmp(file_ext, "svg") == 0) {
+        return "image/svg+xml";
+    }
+    else if(strcasecmp(file_ext, "webp") == 0) {
+        return "image/webp";
+    }
+    else if(strcasecmp(file_ext, "tiff") == 0 || strcasecmp(file_ext, "tif") == 0) {
+        return "image/tiff";
+    }
+    else if(strcasecmp(file_ext, "ico") == 0) {
+        return "image/vnd.microsoft.icon";
+    }
+    else if(strcasecmp(file_ext, "mp3") == 0) {
+        return "audio/mpeg";
+    }
+    else if(strcasecmp(file_ext, "wav") == 0) {
+        return "audio/wav";
+    }
+    else if(strcasecmp(file_ext, "ogg") == 0) {
+        return "audio/ogg";
+    }
+    else if(strcasecmp(file_ext, "mp4") == 0) {
+        return "video/mp4";
+    }
+    else if(strcasecmp(file_ext, "webm") == 0) {
+        return "video/webm";
+    }
+    else if(strcasecmp(file_ext, "mpeg") == 0) {
+        return "video/mpeg";
+    }
+    else if(strcasecmp(file_ext, "exe") == 0) {
+        return "application/vnd.microsoft.portable-executable";
+    }
+    else if(strcasecmp(file_ext, "wasm") == 0) {
+        return "application/wasm";
+    }
+    else if(strcasecmp(file_ext, "bin") == 0) {
+        return "application/octet-stream";
+    }
     else {
         return "application/octet-stream";
     }
@@ -85,7 +175,7 @@ bool case_insensitive_compare(const char *word1, const char *word2) {
 }
 
 
-char *get_file_case_insensitive(const char *file_name) {
+char* get_file_case_insensitive(const char *file_name) {
     DIR *dir = opendir(".");
     if(dir == NULL) {
         fprintf(stderr, "No valid dir");
@@ -116,7 +206,7 @@ char *get_file_case_insensitive(const char *file_name) {
  * @return pointer to char list containing username
  * 
  */
-char * get_username(char * authorization) {
+char* get_username(char * authorization) {
 
     char * pointer_to_colon = strchr(authorization, ':');
 
@@ -140,7 +230,7 @@ char * get_username(char * authorization) {
  * 
  * @return pointer to char list containing password
  */
-char * get_password(char * authorization) {
+char* get_password(char * authorization) {
 
     char * pointer_to_colon = strchr(authorization, ':');
 
@@ -230,5 +320,29 @@ int http_current_time(char* date) {
 }
 
 
+/**
+ * @brief Function for finding last occurence of a char in string
+ * 
+ * 
+ * @param str null terminated string
+ * 
+ * @param chr character to be found
+ * 
+ * @returns index of a last occurence of a string. -1 If no match found
+ */
+int last_occurence(char* str, char chr) {
+    
+    int last_occur = -1;
+    //string strlen 6 
+    for(int idx = 0; idx < strlen(str); idx++) {
+        if(*(str + idx) == chr) {
+            last_occur = idx;
 
+        }
+
+    }
+
+    return last_occur;
+
+}
 

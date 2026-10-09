@@ -51,6 +51,7 @@ let parent_path = null;
 const list_req = "/NAS/LIST";
 const mkdir_req = "/NAS/MKDIR";
 const del_req = "/NAS/DEL";
+const get_req = "NAS/GET";
 
 async function GETNASLIST(path) {
     if(!logged_in) {
@@ -179,8 +180,18 @@ function createButtons(files) {
         }
         else {
             button.classList.add("NAS-file-button");
-            //button.addEventListener("dblclick", getFile);
+            //pliki po dblclick powinny próbować się wyświetlić, a jeśli nie ma takiej opcji to
+            //powinny zostać pobrane, póki co robimy to osobnym przyciskiem
+            downloadButton.addEventListener("mousedown", async function() {
+                const response = await GETNAS(current_path, file.filename);
+                
+            });
+
+
         }
+
+
+
 
         deleteButton.addEventListener("mousedown", async function() {//usuwanie folderów
             //i tak dobrze byłoby zrobić dialog i zapytać czy na pewno
@@ -202,9 +213,12 @@ function createButtons(files) {
 
         });
 
+        downloadButton.innerText = "Download";
         deleteButton.innerText = "Del";
 
+
         castDiv.appendChild(button);
+        castDiv.appendChild(downloadButton);
         castDiv.appendChild(deleteButton);
         
         
@@ -320,6 +334,49 @@ async function DELNAS(path, filename) {
     } catch(e) {
         console.error(e);
         return null;
+    }
+
+}
+
+async function GETNAS(path, filename) {
+    if(!logged_in) {
+        console.error("Function should not be used if user is not logged in.");
+        window.location.href = "main_page.html";
+        return null;
+    }
+
+    try {
+        const response = await fetch(get_req.concat(path).concat(filename), {
+            method: "POST",
+            credentials: "include"
+        });
+
+        if(!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+
+        const disposition = response.headers.get("Content-Disposition");
+
+
+        const blob = await response.blob();
+
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        return true;
+
+    } catch(e) {
+        console.error(e);
+        return false;
     }
 
 }

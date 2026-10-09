@@ -13,9 +13,12 @@ Poprawki
 6. Czasowe usuwanie starych tokenów. Ważne jeśli serwer miałby dłużej działać nierestartowany.
 7. W przypadku braku połączenia z NAS (error in connect) trzeba wysłaś jakieś info na stronę
 8. Każdy error serwera NAS powinien być wyświetlany na stronie.
-9. Szczególnie errory wysyłane dosłownie przez NAS do http
+   Szczególnie errory wysyłane dosłownie przez NAS do http
 10. Automatyczne przełączanie na stronę na którą użytkownik chciał wejść po zalogowaniu
-11. Wysyłanie daty w odpowiedzi od serwa (Nie wszędzie jest a szkoda)
+11. Wysyłanie daty w odpowiedzi od serwa (Nie wszędzie jest a szkoda) SPRAWDZIĆ GDZIE BRAKUJE I DODAĆ
+12. Graficzne zaznaczenie na stronie loginu po nieudanym logowaniu.
+13. PUT
+14. GET
 
 
 Plan na NAS

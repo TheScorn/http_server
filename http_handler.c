@@ -1075,10 +1075,142 @@ void *handle_client(void *arg) {
 
 
         }
-        /*
+        
         else if(strcasecmp(req, "GET") == 0) {
+            free(req);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: GET handle entered, req freed.\n");
+            #endif
+
+            char* response;
+            unsigned long long mtime;
+            unsigned long long filesize;
+
+            //wyciągamy nazwę pliku bo przyda się później
+            int idx = last_occurence(path, '/') + 1;
+            char* filename = (char*)malloc(sizeof(char) * (strlen(path) - idx + 1));
+            snprintf(filename, sizeof(char) * (strlen(path) - idx + 1), "%s", path + idx);
+
+            const char* extension = get_file_extension(filename);
+            const char* mime_type = get_mime_type(extension);
+
+            int get_routine_status = pre_GET_routine_acc(sockD, path, client_info.NAS_username, client_info.NAS_password, response, &mtime, &filesize);
+            if(get_routine_status < 0) {
+                #ifdef DEBUG
+                printf("DEBUG mode: pre_GET_routine_acc returned with fatal error <0.\n");
+                #endif
+                //TODO wysyłanie wiadomości na stronę
+                free(path);
+                free(filename);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "Error number: %d occured in pre_GET_routine_acc.\n", get_routine_status);
+                return NULL;
+            }
+            else if(get_routine_status > 0) {
+                #ifdef DEBUG
+                printf("DEBUG mode: pre_GET_routine_acc returned with a non fatal ERROR >0.\n");
+                #endif
+                //TODO wysyłanie wiadomości na stronę
+                free(path);
+                free(filename);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "NAS returned an error: %s.\n", response);
+                free(response);
+                return NULL;
+            }
+
+            free(path);
+            //mamy rozmiar pliku,
+            char date[50];
+            http_current_time(date);
+            //wysyłamy nagłówek
+            //HTTP/1.1 200 OK
+            //Content-Type: application/pdf
+            //Date: date
+            //Content-Length: length
+            //Content-Disposition: attachment; filename="filename.extension"
+
+            char response2[300];
+            snprintf(response2, sizeof(char) * 300, "HTTP/1.1 200 OK\r\n"
+                                                   "Content-Type: %s\r\n"
+                                                   "Date: %s\r\n"
+                                                   "Content-Length: %lld\r\n"
+                                                   "Content-Disposition: attachment; filename=\"%s\"\r\n\r\n"
+                                                    , mime_type, date, filesize, filename);
+
+            free(filename);
+
+            size_t response_len = strlen(response2);
+
+            size_t total = 0;
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response2 + total, response_len - total, 0);
+                if(n <= 0) {
+                    close(client_fd);
+                    fprintf(stderr, "Error occured inside http header send.\n");
+                    return NULL;
+                }
+                total += n;
+            }
+
+            //teraz trzeba zrobić bufor,
+            //odbieramy od serwera w blokach 1MB
+            //Póki nie mamy filesize to powtarzamy
+
+            //buffer for holding file data before sending it to client
+            unsigned char* hold_buffer = (unsigned char*)malloc(DEFAULT_FILE_BLOCK_SIZE);
+
+            size_t to_recieve;
+            unsigned long long remaining;
+            size_t recieved = 0;
+
+            while(recieved < filesize) {
+                remaining = filesize - recieved;
+                to_recieve = remaining < DEFAULT_FILE_BLOCK_SIZE ? remaining : DEFAULT_FILE_BLOCK_SIZE;
+
+                ssize_t n = recv(sockD, hold_buffer, to_recieve, 0);
+
+                if(n <= 0) {
+                    fprintf(stderr, "Error occured while recieving file from NAS.\n");
+                    free(buffer);
+                    close(client_fd);
+                    close(sockD);
+                    return NULL;
+                }
+
+                //wysyłamy co dostaliśmy na stronę
+
+                total = 0;
+                while(total < n) {
+                    ssize_t n2 = send(client_fd, hold_buffer + total, n - total, 0);
+                    if(n2 <= 0) {
+                        fprintf(stderr, "Error occured while sending file chunk.\n");
+                        free(buffer);
+                        close(client_fd);
+                        close(sockD);
+                        return NULL;
+                    }
+
+                    total += n2;
+                }
+
+
+                recieved += n;
+
+                
+            }
+
+            close(sockD);
+            close(client_fd);
+            return NULL;
+
 
         }
+
+        /*
         else if(strcasecmp(req, "PUT") == 0) {
 
         }

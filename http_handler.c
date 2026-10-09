@@ -907,13 +907,17 @@ void *handle_client(void *arg) {
 
             size_t content_len = strlen(list_json);
 
-            char* message = (char*)malloc(sizeof(char) * (140 + content_len));
-            snprintf(message, sizeof(char) * (140 + content_len), "HTTP/1.1 200 OK\r\n"
+            char date[50];
+            http_current_time(date);
+
+            char* message = (char*)malloc(sizeof(char) * (198 + content_len));
+            snprintf(message, sizeof(char) * (198 + content_len), "HTTP/1.1 200 OK\r\n"
+                                                                "Date: %s\r\n"
                                                                 "Content-Type: application/json\r\n"
                                                                 "Content-Length: %ld\r\n"
                                                                 "Connection: close\r\n"
                                                                 "\r\n"
-                                                                "%s", content_len, list_json);
+                                                                "%s", date, content_len, list_json);
 
             free(list_json);
             size_t message_len = strlen(message);
@@ -977,7 +981,17 @@ void *handle_client(void *arg) {
             printf("DEBUG mode: MKDIR_routine returned with success. path freed.\n");
             #endif
 
-            char response2[] = "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nContent-Length: 16\r\n\r\n{\"success\":true}";
+            char response2[160];
+            char date[50];
+            http_current_time(date);
+            snprintf(response, 160,
+                    "HTTP/1.1 201 Created\r\n"
+                    "Date: %s\r\n"
+                    "Content-Type: application/json\r\n"
+                    "Content-Length: 16\r\n\r\n"
+                    "{\"success\":true}"
+                    , date);
+            
             size_t response_len = strlen(response2);
 
             size_t total = 0;
@@ -997,11 +1011,71 @@ void *handle_client(void *arg) {
 
         }
 
-        /*
+        
         else if(strcasecmp(req, "DEL") == 0) {
+            free(req);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: DEL handle entered, req freed.\n");
+            #endif
+
+            char* response;
+            int del_routine_status = DEL_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, response);
+            if(del_routine_status < 0) {
+                //TODO wiadomość na stronę
+                free(path);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "Error number: %d occured in DEL_routine.\n", del_routine_status);
+                return NULL;
+            }
+            else if(del_routine_status > 0) {
+                //TODO wysyłanie errora na stronę
+                free(path);
+                close(sockD);
+                close(client_fd);
+                fprintf(stderr, "NAS returned an error: %s.\n", response);
+                free(response);
+                return NULL;
+            }
+
+            close(sockD);
+            free(path);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: DEL routine returned with success, path freed.\n");
+            #endif
+
+            char date[50];
+            http_current_time(date);
+            char response2[200];
+
+            snprintf(response2, sizeof(char) * (250), "HTTP/1.1 200 OK\r\n"
+                                                    "Date: %s\r\n"
+                                                    "Content-Type: application/json\r\n"
+                                                    "Content-Length: 16\r\n\r\n"
+                                                    "{\"success\":true}"
+                                                    , date);
+
+            size_t response_len = strlen(response2);
+
+            size_t total = 0;
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response2 + total, response_len - total, 0);
+                if(n <= 0) {
+                    close(client_fd);
+                    fprintf(stderr, "Error occured during del send.\n");
+                    return NULL;
+                }
+                total += n;
+            }
+
+            close(client_fd);
+            return NULL;
+
 
         }
-        
+        /*
         else if(strcasecmp(req, "GET") == 0) {
 
         }

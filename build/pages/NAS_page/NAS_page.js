@@ -52,6 +52,7 @@ const list_req = "/NAS/LIST";
 const mkdir_req = "/NAS/MKDIR";
 const del_req = "/NAS/DEL";
 const get_req = "NAS/GET";
+const put_req = "/NAS/PUT";
 
 async function GETNASLIST(path) {
     if(!logged_in) {
@@ -293,8 +294,8 @@ async function backToParent() {
 
 const dialog = document.getElementById("dirNameDialog");
 const input = document.getElementById("dirNameField");
-
-
+const uploadDialog = document.getElementById("uploadDialog");
+const fileInput = document.getElementById("fileInput");
 
 
 async function MKDIRNAS(path, filename) {
@@ -380,6 +381,33 @@ async function GETNAS(path, filename) {
     }
 
 }
+
+
+async function uploadOnClick() {
+    fileInput.click();
+}
+
+fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+
+    if(!file) {
+        return null;
+    }
+
+    const response = await fetch(put_req.concat(current_path).concat(file.name), {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            "File-Size" : String(file.size)
+        },
+        body: file
+    });
+
+    
+
+
+});
+
 
 async function newDirOnClick() {
     dialog.showModal();

@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 #project name and version
-project(http_server VERSION 1.7)
+project(http_server VERSION 1.8)
 
 configure_file(http_server_header.h.in ${PROJECT_SOURCE_DIR}/http_server_header.h)
 
@@ -54,4 +54,5 @@ option(ENABLE_DEBUG "Enable DEBUG mode" OFF)
 if(ENABLE_DEBUG)
     target_compile_definitions(http_handler PRIVATE DEBUG)
     target_compile_definitions(NAS_API PRIVATE DEBUG)
+    target_compile_definitions(http_build_response PRIVATE DEBUG)
 endif()

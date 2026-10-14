@@ -26,6 +26,7 @@
                             <span id="NAS-path-span" class="NAS-path-span"></span>
                         </div>
                         <div class="NAS-top-bar-back">
+                            <button id="NAS-upload-button" onclick="uploadOnClick()">Upload</button>
                             <button id="NAS-mkdir-button" class="NAS-mkdir-button" onclick="newDirOnClick()">New directory</button>
                         </div>
 
@@ -58,7 +59,7 @@
             </form>
         </dialog>
 
-
+        <input type="file" id="fileInput" hidden>
 
     </body>
 

@@ -246,7 +246,9 @@ char* get_password(char * authorization) {
  * 
  * @param src pointer to char list containing URL in ASCII format
  * 
- * @return pointer to decoded character list
+ * @return pointer to decoded character list.
+ * This points to dynamically allocated memory that needs to be
+ * manually freed.
  * 
  */
 char *url_decode(const char *src) {

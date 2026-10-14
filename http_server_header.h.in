@@ -63,7 +63,11 @@ char *get_file_case_insensitive(const char *file_name);
 
 char *url_decode(const char *src);
 
-int build_http_response(const char *file_name, const char *file_ext, char *response, size_t *response_len, int buffer_size);
+int build_http_response(const char *file_path, const char *file_ext, char **response);
+
+int load_file(char* file_path, char** file);
+
+int add_response_header(char* raw, const char* file_ext, char** processed);
 
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
@@ -112,7 +116,8 @@ int last_occurence(char* str, char chr);
 #define VERBOSE_INPUT_DEFAULT false
 #define DEFAULT_PORT 54001
 #define PAGES "./pages"
-#define DEFAULT_BUFFER_SIZE 104857600
+//zmieniamy bufor wejściowy na 100kB, to i tak jest aż nadto
+#define DEFAULT_BUFFER_SIZE 102400
 #define DB_HOST "localhost"
 #define DB_USER "http_server"
 #define DB_PASSWORD "passwd"

@@ -18,7 +18,11 @@ Poprawki
 11. Wysyłanie daty w odpowiedzi od serwa (Nie wszędzie jest a szkoda) SPRAWDZIĆ GDZIE BRAKUJE I DODAĆ
 12. Graficzne zaznaczenie na stronie loginu po nieudanym logowaniu.
 13. PUT
-14. GET
+14. Czemu czasem psuje się LIST. Jeśli folder jest pusty trzeba lepiej obsłużyć ten null.
+15. Czasem nie wstawia się w ścieżkę "/". Sprawdzić czemu.
+19. Czyszczenie malloców i free w login i logout
+20. Czy na początku HTTP GET kopiowanie buffora do page_buffer jest potrzebne??
+
 
 
 Plan na NAS

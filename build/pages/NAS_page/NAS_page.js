@@ -404,7 +404,7 @@ fileInput.addEventListener("change", async () => {
         body: file
     });
 
-    
+    await refresh_list(current_path);
 
 
 });

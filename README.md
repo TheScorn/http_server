@@ -28,12 +28,8 @@ Poprawki
 
 
 13. PUT !!!!!!!!!!!!!!!!!!!
-Po przyjęciu bufora wiadomości sprawdzamy Content-Length
-(Jeśli wszystko się zgadza to oczywiście najpierw idzie Pre-PUT_routine)
-(Jakiś pointer wskazujący na początek Contentu)
-Sprawdzamy czy po odjęciu długości bufora Content zmieścił się cały
-Jeśli tak to wysyłamy
-Jeśli nie to robimy duży bufor i w pętli odbieramy kolejne części ze strony i przekazujemy do NAS.
+Działa dla małego pliku, zepsuło się dla pdf-a
+znaleźć przyczynę
 
 
 Testy:

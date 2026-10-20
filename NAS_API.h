@@ -34,15 +34,17 @@ int send_GET(int sockD, char* path, char* login, char* password);
 
 int send_PUT(int sockD, char* path, char* login, char* password);
 
+int pre_PUT_routine(int sockD, char* path, char* filename, char* login, char* password, unsigned long long* filesize, unsigned long long* mtime, char** response);
+
 int send_DEL(int sockD, char* path, char* login, char* password, bool force_flag);
 
-int DEL_routine(int sockD, char* path, char* login, char* password, char* response);
+int DEL_routine(int sockD, char* path, char* login, char* password, char** response);
 
 int send_MKDIR(int sockD, char* path, char* login, char* password);
 
-int MKDIR_routine(int sockD, char* path, char* login, char* password, char* response);
+int MKDIR_routine(int sockD, char* path, char* login, char* password, char** response);
 
-int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char* response, unsigned long long* mtime, unsigned long long* filesize);
+int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char** response, unsigned long long* mtime, unsigned long long* filesize);
 
 int convert(unsigned long long* result, char* str);
 

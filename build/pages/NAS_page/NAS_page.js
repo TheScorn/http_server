@@ -398,7 +398,8 @@ fileInput.addEventListener("change", async () => {
         method: "POST",
         credentials: "include",
         headers: {
-            "File-Size" : String(file.size)
+            "File-Size" : String(file.size),
+            "mTime" : String(Math.floor(file.lastModified / 1000))
         },
         body: file
     });

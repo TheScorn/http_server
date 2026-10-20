@@ -717,7 +717,7 @@ int send_GET(int sockD, char* path, char* login, char* password) {
  * -17 if filesize in metadata was not equal to secon prefix
  * 
  */
-int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char* response, unsigned long long* mtime, unsigned long long* filesize) {
+int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char** response, unsigned long long* mtime, unsigned long long* filesize) {
     char status;
     if(send_GET(sockD, path, login, password) == -1) {
         return -1;
@@ -735,35 +735,35 @@ int pre_GET_routine_acc(int sockD, char* path, char* login, char* password, char
         return -4;
     }
 
-    response = (char*)malloc(sizeof(char) * (prefix + 1));
+    *response = (char*)malloc(sizeof(char) * (prefix + 1));
 
-    status = recv_message(sockD, response, prefix);
+    status = recv_message(sockD, *response, prefix);
     if(status == -1) {
-        free(response);
+        free(*response);
         return -5;
     }
     if(status == -2) {
-        free(response);
+        free(*response);
         return -6;
     }
 
     //ta odpowiedź może być albo metadanymi albo ERROREM
     //jeśli to error to wychodzimy i kończymy zabawę
-    if(strncasecmp(response, "ERROR", 5) == 0) {
+    if(strncasecmp(*response, "ERROR", 5) == 0) {
         return 1;
     }
 
     
     //zbieramy typ, 
-    char type = *response;
+    char type = **response;
 
     char* last_mod_buffer = (char*)malloc(sizeof(char) * 17);
     char* filesize_buffer = (char*)malloc(sizeof(char) * 17);
 
-    snprintf(last_mod_buffer, sizeof(char) * 17, "%s", response + 1);
-    snprintf(filesize_buffer, sizeof(char) * 17, "%s", response + 17);
+    snprintf(last_mod_buffer, sizeof(char) * 17, "%s", *response + 1);
+    snprintf(filesize_buffer, sizeof(char) * 17, "%s", *response + 17);
 
-    free(response);
+    free(*response);
 
 
     status = convert(mtime, last_mod_buffer);
@@ -857,6 +857,156 @@ int send_PUT(int sockD, char* path, char* login, char* password) {
     return 0;
 }
 
+/**
+ * @brief routine for comunication before sending file
+ * 
+ * @param sockD socket descriptor. Socket should be connected to NAS beforehand.
+ * 
+ * @param path pointer to null-terminated string with path.
+ * 
+ * @param filename pointer to null-terminated string with file-name.
+ * 
+ * @param login pointer to null-terminated string with login.
+ * 
+ * @param password pointer to null-terminated string with password.
+ * 
+ * @param filesize pointer to unsigned long long with filesize.
+ * 
+ * @param mtime pointer to unsigned long long with last modification timestamp.
+ * 
+ * @param response char double pointer where response from server is stored.
+ * 
+ * @return 0 if execution successful, -1 if error occured in send_PUT,
+ * -2 if server closed connection while sending prefix,
+ * -3 if error occured during prefix recv,
+ * -4 if error occured during prefix conversion,
+ * -5 if server closed connection while sending response,
+ * -6 if error occured during message recv,
+ * -7 if unknown response from server recieved,
+ * -8 if error occured during metadata send,
+ * -9 if error occured during ACCEPT/REFUSE recieve,
+ * -10 if unknown messge from server recieved,
+ * -11 if error occured during prefix send,
+ * 1 if ERROR recieved instead of ACK.
+ */
+int pre_PUT_routine(int sockD, char* path, char* filename, char* login, char* password, unsigned long long* filesize, unsigned long long* mtime, char** response) {
+    
+    printf("TEST: path in pre_PUT : %s\n",path);
+
+
+    char status;
+    if(send_PUT(sockD, path, login, password) == -1) {
+        return -1;
+    }
+
+    #ifdef DEBUG
+    printf("DEBUG mode: pre_PUT_routine: send_PUT returned with code 0\n");
+    #endif
+
+    unsigned long long prefix;
+    status = recv_convert_prefix(sockD, &prefix);
+    if(status == -1) {
+        return -2;
+    }
+    else if(status == -2) {
+        return -3;
+    }
+    else if(status == -3) {
+        return -4;
+    }
+
+    #ifdef DEBUG
+    printf("DEBUG mode: pre_PUT_routine: prefix recieved and converted: %llu\n", prefix);
+    #endif
+
+    *response = (char*)malloc(sizeof(char) * (prefix + 1));
+
+    status = recv_message(sockD, *response, prefix);
+    if(status == -1) {
+        free(*response);
+        return -5;
+    }
+    if(status == -2) {
+        free(*response);
+        return -6;
+    }
+
+    #ifdef DEBUG
+    printf("DEBUG mode: pre_PUT_routine: messaage recvd: %s\n", *response);
+    #endif
+
+    //sprawdzamy czy jest ACK
+    if(strncasecmp("ERROR", *response, 5) == 0) {
+        return 1;
+    }
+    else if(strcasecmp("ACK", *response) != 0) {
+        //nieznana odpowiedź od serwera
+        free(*response);
+        return -7;
+    }
+
+    //jak jest ACK to wysyłamy metadane
+    //{PREFIX}{type}{16x hex mtime}{16x hex size}{name}
+    size_t filename_len = strlen(filename);
+
+    //stack alloc
+    char raw_message[1 + 16 + 16 + filename_len + 1];
+    snprintf(raw_message, sizeof(char) * (1 + 16 + 16 + filename_len + 1), "0%016llX%016llX%s", *mtime, *filesize, filename);
+
+    char message[16 + strlen(raw_message) + 1];
+    snprintf(message, sizeof(char) * (16 + strlen(raw_message) + 1), "%016zX%s", strlen(raw_message), raw_message);
+
+    size_t message_len = strlen(message);
+
+    size_t total = 0;
+    while(total < message_len) {
+        ssize_t n = send(sockD, message + total, message_len - total, 0);
+        if(n <= 0) {
+            return -8;
+        }
+        total += n;
+    }
+
+    //sprawdzamy czy jest ACCEPT
+    char acc_ref_buffer[16 + 6 + 1];
+    total = 0;
+    while(total < 16 + 6) {
+        ssize_t n = recv(sockD, acc_ref_buffer + total, 16 + 6 - total, 0);
+        if(n <= 0) {
+            return -9;
+        }
+        total += n;
+    }
+    acc_ref_buffer[16 + 6] = '\0';
+
+    if(strcasecmp(acc_ref_buffer, "0000000000000006REFUSE") == 0) {
+        return -9;
+    }
+    else if(strcasecmp(acc_ref_buffer, "0000000000000006ACCEPT") != 0) {
+        return -10;
+    }
+
+    //wysyłamy prefix
+    char prefix_buffer[17];
+    snprintf(prefix_buffer, sizeof(char) * 17, "%llX", *filesize);
+    total = 0;
+    while(total < 16) {
+        ssize_t n = send(sockD, prefix_buffer + total, 16 - total, 0);
+        if(n <= 0) {
+            return -11;
+        }
+        total += n;
+    }
+
+    return 0;
+
+
+
+    //mamy accept, wysyłamy plik
+    return 0;
+
+
+}
 
 
 /**
@@ -927,7 +1077,7 @@ int send_DEL(int sockD, char* path, char* login, char* password, bool force_flag
  * -7 if unexpected message from NAS recieved
  * 1 if error
  */
-int DEL_routine(int sockD, char* path, char* login, char* password, char* response) {
+int DEL_routine(int sockD, char* path, char* login, char* password, char** response) {
     char status;
     if(send_DEL(sockD, path, login, password, true) == -1) {
         return -1;
@@ -945,27 +1095,27 @@ int DEL_routine(int sockD, char* path, char* login, char* password, char* respon
         return -4;
     }
 
-    response = (char*)malloc(sizeof(char) * (prefix + 1));
+    *response = (char*)malloc(sizeof(char) * (prefix + 1));
 
-    status = recv_message(sockD, response, prefix);
+    status = recv_message(sockD, *response, prefix);
     if(status == -1) {
-        free(response);
+        free(*response);
         return -5;
     }
     else if(status == -2) {
-        free(response);
+        free(*response);
         return -6;
     }
 
 
-    if(strncasecmp(response, "ERROR", 5) == 0) {
+    if(strncasecmp(*response, "ERROR", 5) == 0) {
         return 1;
     }
-    else if(strncasecmp(response, "ACK", 3) != 0) {
-        free(response);
+    else if(strncasecmp(*response, "ACK", 3) != 0) {
+        free(*response);
         return -7;
     }
-    free(response);
+    free(*response);
     return 0;
 
 }
@@ -1036,7 +1186,7 @@ int send_MKDIR(int sockD, char* path, char* login, char* password) {
  * -7 if unexpected message from NAS recieved
  * 1 if 
  */
-int MKDIR_routine(int sockD, char* path, char* login, char* password, char* response) {
+int MKDIR_routine(int sockD, char* path, char* login, char* password, char** response) {
     char status;
     if(send_MKDIR(sockD, path, login, password) == -1) {
         return -1;
@@ -1054,27 +1204,27 @@ int MKDIR_routine(int sockD, char* path, char* login, char* password, char* resp
         return -4;
     }
 
-    response = (char*)malloc(sizeof(char) * (prefix + 1));
+    *response = (char*)malloc(sizeof(char) * (prefix + 1));
 
-    status = recv_message(sockD, response, prefix);
+    status = recv_message(sockD, *response, prefix);
     if(status == -1) {
-        free(response);
+        free(*response);
         return -5;
     }
     else if(status == -2) {
-        free(response);
+        free(*response);
         return -6;
     }
 
 
-    if(strncasecmp(response, "ERROR", 5) == 0) {
+    if(strncasecmp(*response, "ERROR", 5) == 0) {
         return 1;
     }
-    else if(strncasecmp(response, "ACK", 3) != 0) {
-        free(response);
+    else if(strncasecmp(*response, "ACK", 3) != 0) {
+        free(*response);
         return -7;
     }
-    free(response);
+    free(*response);
     return 0;
 
 }

@@ -95,9 +95,9 @@ void *handle_client(void *arg) {
         connection_type = LOGOUT;
     }
 
-    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ]*)[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)*([\r\n|\r|\n]|$)(File-Size:[[:space:]]*([0-9]+))?", REG_EXTENDED);
-    regmatch_t NAS_matches[6];
-    if(regexec(&regex, buffer, 6, NAS_matches, 0) == 0) {
+    regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ]*)[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)*([\r\n|\r|\n]|$)", REG_EXTENDED);
+    regmatch_t NAS_matches[4];
+    if(regexec(&regex, buffer, 4, NAS_matches, 0) == 0) {
         connection_type = NAS;
     }
 
@@ -909,35 +909,49 @@ void *handle_client(void *arg) {
 
         //this pointer is not NULL only in PUT
         char* file_size_buffer = NULL;
+        char* mtime_buffer = NULL;
         //sprawdzamy która komenda została wpisana
         size_t req_len = NAS_matches[1].rm_eo - NAS_matches[1].rm_so;
         char* req = (char*)malloc(sizeof(char) * (req_len + 1));
         snprintf(req, sizeof(char) * (req_len + 1), "%s", buffer + NAS_matches[1].rm_so);
         
-        if(NAS_matches[5].rm_so != -1) {
+        //inny regex do szukania File-Size
+        regmatch_t file_size_matches[3];
+        regcomp(&regex, "File-Size:[[:space:]]*([0-9]+)\r?\nmTime:[[:space:]]([0-9]+)", REG_EXTENDED);
+
+        if(regexec(&regex, buffer, 3, file_size_matches, 0) == 0) {
             #ifdef DEBUG
             printf("DEBUG mode: File-Size group found.\n");
             #endif
 
-            size_t file_size_len = NAS_matches[5].rm_eo - NAS_matches[5].rm_so;
+            size_t file_size_len = file_size_matches[1].rm_eo - file_size_matches[1].rm_so;
             file_size_buffer = (char*)malloc(sizeof(char) * (file_size_len + 1));
-            snprintf(file_size_buffer, sizeof(char) * (file_size_len + 1), "%s", buffer + NAS_matches[5].rm_so);
+            snprintf(file_size_buffer, sizeof(char) * (file_size_len + 1), "%s", buffer + file_size_matches[1].rm_so);
             
+            size_t mtime_len = file_size_matches[2].rm_eo - file_size_matches[2].rm_so;
+            mtime_buffer = (char*)malloc(sizeof(char) * (mtime_len + 1));
+            snprintf(mtime_buffer, sizeof(char) * (mtime_len + 1), "%s", buffer + file_size_matches[2].rm_so);
+
             #ifdef DEBUG
-            printf("DEBUG mode: file_size_buffer: %s", file_size_buffer);
+            printf("DEBUG mode: file_size_buffer: %s\n", file_size_buffer);
             #endif
         }
 
-        free(buffer);
+        regfree(&regex);
+
+        //robimy miejsce na plik i przenosimy to co już przyszło
+        //sprawdzamy ile tego jest
+
+
 
         #ifdef DEBUG
-        printf("DEBUG mode: buffer freed. req: %s\n", req);
+        printf("DEBUG mode: buffer freed. req: %s, file_size_buffer: %s\n", req, file_size_buffer);
         #endif
 
 
         if(strcasecmp(req, "LIST") == 0) {
             free(req);
-
+            free(buffer);
             #ifdef DEBUG
             printf("DEBUG mode: LIST handle entered, req freed.\n");
             #endif
@@ -1021,13 +1035,14 @@ void *handle_client(void *arg) {
 
         else if(strcasecmp(req, "MKDIR") == 0) {
             free(req);
+            free(buffer);
 
             #ifdef DEBUG
             printf("DEBUG mode: MKDIR handle entered, req freed.\n");
             #endif
 
             char* response;
-            int mkdir_routine_status = MKDIR_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, response);
+            int mkdir_routine_status = MKDIR_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, &response);
             if(mkdir_routine_status < 0) {
                 //TODO trzeba wysłać na stronę error z NAS
                 free(path);
@@ -1092,13 +1107,15 @@ void *handle_client(void *arg) {
         
         else if(strcasecmp(req, "DEL") == 0) {
             free(req);
+            free(buffer);
+
 
             #ifdef DEBUG
             printf("DEBUG mode: DEL handle entered, req freed.\n");
             #endif
 
             char* response;
-            int del_routine_status = DEL_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, response);
+            int del_routine_status = DEL_routine(sockD, path, client_info.NAS_username, client_info.NAS_password, &response);
             if(del_routine_status < 0) {
                 //TODO wiadomość na stronę
                 free(path);
@@ -1156,6 +1173,7 @@ void *handle_client(void *arg) {
         
         else if(strcasecmp(req, "GET") == 0) {
             free(req);
+            free(buffer);
 
             #ifdef DEBUG
             printf("DEBUG mode: GET handle entered, req freed.\n");
@@ -1173,7 +1191,7 @@ void *handle_client(void *arg) {
             const char* extension = get_file_extension(filename);
             const char* mime_type = get_mime_type(extension);
 
-            int get_routine_status = pre_GET_routine_acc(sockD, path, client_info.NAS_username, client_info.NAS_password, response, &mtime, &filesize);
+            int get_routine_status = pre_GET_routine_acc(sockD, path, client_info.NAS_username, client_info.NAS_password, &response, &mtime, &filesize);
             if(get_routine_status < 0) {
                 #ifdef DEBUG
                 printf("DEBUG mode: pre_GET_routine_acc returned with fatal error <0.\n");
@@ -1296,50 +1314,64 @@ void *handle_client(void *arg) {
             printf("DEBUG mode: PUT entered.\n");
             #endif
 
-            if(file_size_buffer == NULL) {
+            if(file_size_buffer == NULL || mtime_buffer == NULL) {
                 close(sockD);
                 close(client_fd);
-                fprintf(stderr, "PUT entered without assigning file_size.\n");
+                free(buffer);
+                fprintf(stderr, "PUT entered without assigning file_size or mtime.\n");
                 return NULL;
             }
+
 
             //trzeba rozbić path na path i filename
             int idx = last_occurence(path, '/');
             // path/to/file
             // 01234567   11
 
-            char dir_path[strlen(path) + 2];
+            char dir_path[idx + 2];
             char filename[strlen(path) - idx + 1];
-            snprintf(dir_path, sizeof(char) * (strlen(path) + 2), "%s", path);
+            snprintf(dir_path, sizeof(char) * (idx + 2), "%s", path);
+            dir_path[idx + 2] = '\0';
             snprintf(filename, sizeof(char) * (strlen(path) - idx + 1), "%s", path + idx + 1);
             free(path);
 
             #ifdef DEBUG
             printf("DEBUG mode: path freed. dir_path: %s, filename: %s.\n", dir_path, filename);
             #endif
-
+            
 
 
             //trzeba wyciągnąć rozmiar pliku w bajtach
             //mamy regex
             unsigned long long file_size;
-            
+            unsigned long long mtime;
             
             errno = 0;
             char* end;
+
+            #ifdef DEBUG
+            printf("DEBUG mode: file_size_buffer: %s\n", file_size_buffer);
+            #endif
+
             file_size = strtoull(file_size_buffer, &end, 10);
-            free(file_size_buffer);
+            mtime = strtoull(mtime_buffer, &end, 10);
 
             if(file_size == 0 && end == file_size_buffer) {
                 fprintf(stderr, "File size conversion error: String was not a number.\n");
                 close(sockD);
                 close(client_fd);
+                free(file_size_buffer);
+                free(mtime_buffer);
+                free(buffer);
                 return NULL;
             }
             else if(file_size == ULLONG_MAX && errno) {
                 fprintf(stderr, "File size conversion error: Value does not fit in ull.\n");
                 close(sockD);
                 close(client_fd);
+                free(file_size_buffer);
+                free(mtime_buffer);
+                free(buffer);
                 return NULL;
 
             }
@@ -1347,22 +1379,188 @@ void *handle_client(void *arg) {
                 fprintf(stderr, "File size conversion error: str had garbage chars.\n");
                 close(client_fd);
                 close(sockD);
+                free(file_size_buffer);
+                free(mtime_buffer);
+                free(buffer);
+                return NULL;
+            }
+            else if(mtime == 0 && end == mtime_buffer) {
+                fprintf(stderr, "File size conversion error: String was not a number.\n");
+                close(sockD);
+                close(client_fd);
+                free(file_size_buffer);
+                free(mtime_buffer);
+                free(buffer);
+                return NULL;
+            }
+            else if(mtime == ULLONG_MAX && errno) {
+                fprintf(stderr, "File size conversion error: Value does not fit in ull.\n");
+                close(sockD);
+                close(client_fd);
+                free(file_size_buffer);
+                free(mtime_buffer);
+                free(buffer);
+                return NULL;
+
+            }
+            else if(*end) {
+                fprintf(stderr, "File size conversion error: str had garbage chars.\n");
+                close(client_fd);
+                close(sockD);
+                free(file_size_buffer);
+                free(mtime_buffer);
+                free(buffer);
                 return NULL;
             }
 
+            free(file_size_buffer);
+            free(mtime_buffer);
 
             #ifdef DEBUG
             printf("DEBUG mode: file_size converted: %llu, file_size_buffer freed.\n", file_size);
             #endif
 
+            //puszczamy pre-PUT-routine
+            char* response;
+            int pre_PUT_routine_status = pre_PUT_routine(sockD, dir_path, filename, client_info.NAS_username, client_info.NAS_password, &file_size, &mtime, &response);
+            
+            #ifdef DEBUG
+            printf("DEBUG mode: pre_PUT_routine returned with code: %d\n", pre_PUT_routine_status);
+            #endif
+            
+            if(pre_PUT_routine_status > 0) {
+                fprintf(stderr, "NAS server sent an error: %s\n", response);
+                free(response);
+                free(buffer);
+                close(client_fd);
+                close(sockD);
+                return NULL;
+            }
+            else if(pre_PUT_routine_status < 0) {
+                fprintf(stderr, "pre_PUT_routine returned with error code: %d\n", pre_PUT_routine_status);
+                free(buffer);
+                close(client_fd);
+                close(sockD);
+                return NULL;
+            }
+
+            //można wysyłać plik
 
 
+            //mamy rozmiar pliku w bajtach
+            //mamy długość wiadomości -> jej rozmiar to długość * sizeof(char)
+            size_t message_len = strlen(buffer);
 
+            //tutaj robić dalej
+            //char* file_buffer = (char*)malloc(DEFAULT_FILE_BLOCK_SIZE); może później póki nie wiadomo czy się przyda
 
+            char* file_contents = strstr(buffer, "\r\n\r\n") + 1;
+            size_t recvd_file_content_len = strlen(file_contents);
+            size_t total_streamed = 0;
+            unsigned long long remaining;
+            size_t to_recieve;
+            size_t total;
+            #ifdef DEBUG
+            printf("DEBUG mode: file_content: %s\n", file_contents);
+            #endif
+
+            //może coś wielowątkowego z jednoczesnym odbieraniem nowej porcji i wysyłaniem tego co już jest
+            if(file_size > 0) {
+
+                #ifdef DEBUG
+                printf("DEBUG mode: file_size > 0 entered.\n");
+                #endif
+
+                //puszczamy najpierw to co mamy już w buforze
+                
+                while(total_streamed < recvd_file_content_len) {
+                    ssize_t n = send(sockD, file_contents + total, recvd_file_content_len - total, 0);
+                    if(n <= 0) {
+                        fprintf(stderr, "Error occured during first batch send.\n");
+                        close(sockD);
+                        close(client_fd);
+                        free(buffer);
+                        return NULL;
+                    }
+                    total_streamed += n;
+                }
+
+                while(total_streamed < file_size) {
+                    remaining = file_size - total_streamed;
+                    to_recieve = remaining < DEFAULT_FILE_BLOCK_SIZE ? remaining : DEFAULT_FILE_BLOCK_SIZE;
+
+                    ssize_t n = recv(client_fd, buffer, to_recieve, 0);
+
+                    if(n <= 0) {
+                        fprintf(stderr, "Error occured during stream-recv.\n");
+                        free(buffer);
+                        close(client_fd);
+                        close(sockD);
+                        return NULL;
+                    }
+
+                    total = 0;
+                    while(total < n) {
+                        ssize_t n2 = send(sockD, buffer + total, n - total, 0);
+                        if(n2 <= 0) {
+                            fprintf(stderr, "Error occured during stream-send.\n");
+                            free(buffer);
+                            close(client_fd);
+                            close(sockD);
+                            return NULL;
+                        }
+                        total += n2;
+                    }
+
+                    total_streamed += n;
+                }
+            }
+
+            close(sockD);
+            free(buffer);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: file streamed, buffer freed.\n");
+            #endif
+
+            //wysyłamy 200 OK
+            char response2[250];
+            char date[50];
+            http_current_time(date);
+            snprintf(response2, 250 * sizeof(char), "HTTP/1.1 200 OK\r\n"
+                                                    "Date: %s\r\n"
+                                                    "Content-Type: application/json\r\n"
+                                                    "Content-Length: 16\r\n\r\n"
+                                                    "{\"success\":true}", date);
+            size_t response_len = strlen(response2);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: response2 created.\n");
+            #endif
+
+            total = 0;
+
+            while(total < response_len) {
+                ssize_t n = send(client_fd, response2 + total, response_len - total, 0);
+                if(n <= 0) {
+                    close(client_fd);
+                    fprintf(stderr, "Error occured during 200 OK send.\n");
+                    return NULL;
+                }
+                total += n;
+            }
+
+            close(client_fd);
+
+            #ifdef DEBUG
+            printf("DEBUG mode: sockets closed, returning.\n");
+            #endif
+
+            return NULL;
 
         }
         
-        //W przypadku PUT trzeba sprawdzić jeszcze nagłówki
+        
         else {
             #ifdef DEBUG
             printf("DEBUG mode: else entered.\n");

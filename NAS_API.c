@@ -891,7 +891,6 @@ int send_PUT(int sockD, char* path, char* login, char* password) {
  */
 int pre_PUT_routine(int sockD, char* path, char* filename, char* login, char* password, unsigned long long* filesize, unsigned long long* mtime, char** response) {
     
-    printf("TEST: path in pre_PUT : %s\n",path);
 
 
     char status;

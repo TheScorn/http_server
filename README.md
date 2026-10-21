@@ -27,9 +27,7 @@ Poprawki
 23. Szyfrowane połączenie z NAS by TLS
 
 
-13. PUT !!!!!!!!!!!!!!!!!!!
-Działa dla małego pliku, zepsuło się dla pdf-a
-znaleźć przyczynę
+
 
 
 Testy:

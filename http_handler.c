@@ -1449,20 +1449,36 @@ void *handle_client(void *arg) {
 
             //mamy rozmiar pliku w bajtach
             //mamy długość wiadomości -> jej rozmiar to długość * sizeof(char)
-            size_t message_len = strlen(buffer);
+            
+            //czy to jest potrzebne
+            //size_t message_len = strlen(buffer);
 
             //tutaj robić dalej
             //char* file_buffer = (char*)malloc(DEFAULT_FILE_BLOCK_SIZE); może później póki nie wiadomo czy się przyda
 
             char* file_contents = strstr(buffer, "\r\n\r\n") + 1;
-            size_t recvd_file_content_len = strlen(file_contents);
+            *(file_contents) = '\0';
+
+            
+
+            //długość nagłówka po wstawieniu \0 w bufor
+            size_t header_len = strlen(buffer);
+            
+            //size_t recvd_file_content_len = strlen(file_contents);
+
+            //ile dostaliśmy już pliku
+            //albo dostaliśmy cały jesli jest mniejszy niż (obecny buffer - nagłówek) http
+            //albo dostaliśmy część i jest to (obecny buffer - nagłówek)
+
+            size_t recvd_file_content_len = file_size < (buffer_size - header_len - 1) ? file_size : (buffer_size - header_len - 1);
             size_t total_streamed = 0;
             unsigned long long remaining;
             size_t to_recieve;
             size_t total;
-            #ifdef DEBUG
-            printf("DEBUG mode: file_content: %s\n", file_contents);
-            #endif
+            
+
+
+            
 
             //może coś wielowątkowego z jednoczesnym odbieraniem nowej porcji i wysyłaniem tego co już jest
             if(file_size > 0) {
@@ -1471,10 +1487,11 @@ void *handle_client(void *arg) {
                 printf("DEBUG mode: file_size > 0 entered.\n");
                 #endif
 
+                
                 //puszczamy najpierw to co mamy już w buforze
                 
                 while(total_streamed < recvd_file_content_len) {
-                    ssize_t n = send(sockD, file_contents + total, recvd_file_content_len - total, 0);
+                    ssize_t n = send(sockD, file_contents + total_streamed, recvd_file_content_len - total_streamed, 0);
                     if(n <= 0) {
                         fprintf(stderr, "Error occured during first batch send.\n");
                         close(sockD);
@@ -1485,11 +1502,32 @@ void *handle_client(void *arg) {
                     total_streamed += n;
                 }
 
+                //podmiana bufora na większy o wielkości 1MB
+                free(buffer);
+
+                buffer = (char*)malloc(DEFAULT_FILE_BLOCK_SIZE);
+
+                #ifdef DEBUG
+                printf("DEBUG mode: buffer replaced, total streamed so far: %zd against file_size: %llu\n", total_streamed, file_size);
+                int i = 0;
+                #endif
+
                 while(total_streamed < file_size) {
+
+                    #ifdef DEBUG
+                    printf("DEBUG mode: streaming loop iter: %d: total streamed so far: %zd against file_size: %llu\n", i, total_streamed, file_size);
+                    i++;
+
+                    #endif
+
                     remaining = file_size - total_streamed;
                     to_recieve = remaining < DEFAULT_FILE_BLOCK_SIZE ? remaining : DEFAULT_FILE_BLOCK_SIZE;
 
                     ssize_t n = recv(client_fd, buffer, to_recieve, 0);
+
+                    #ifdef DEBUG
+                    printf("DEBUG mode: streaming loop iter: %d: bytes recieved: %zd\n", i, n);
+                    #endif
 
                     if(n <= 0) {
                         fprintf(stderr, "Error occured during stream-recv.\n");

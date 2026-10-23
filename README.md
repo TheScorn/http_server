@@ -26,10 +26,6 @@ Poprawki
 22. Szyfrowana baza danych
 23. Szyfrowane połączenie z NAS by TLS
 
-
-
-
-
 Testy:
 1. Testy jednostkowe dla prostych funkcji
 a) build_http_response

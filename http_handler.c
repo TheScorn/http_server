@@ -1456,8 +1456,8 @@ void *handle_client(void *arg) {
             //tutaj robić dalej
             //char* file_buffer = (char*)malloc(DEFAULT_FILE_BLOCK_SIZE); może później póki nie wiadomo czy się przyda
 
-            char* file_contents = strstr(buffer, "\r\n\r\n") + 1;
-            *(file_contents) = '\0';
+            char* file_contents = strstr(buffer, "\r\n\r\n") + 4;
+            *(file_contents - 1) = '\0';
 
             
 

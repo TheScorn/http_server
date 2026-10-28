@@ -187,4 +187,61 @@ int send_http_bad_request(int client_fd) {
         return -1;
     }
 
+    return 0;
+}
+
+/**
+ * @brief Send 401 Unauthorized.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_unauthorized(int client_fd) {
+    char date[50];
+    char response[250];
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * 250, "HTTP/1.1 401 Unauthorized\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "Connection: close\r\n\r\n", date);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+/**
+ * @brief Send 200 OK and set Cookie
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param session_id pointer to null-terminated string with session id stored.
+ * 
+ * @param session_id_lifespan int describing how long a token is viable in minutes.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_ok_set_cookie(int client_fd, char* session_id, int session_id_lifespan) {
+    int session_id_len = strlen(session_id);
+    
+    char date[50];
+    char response[300 + session_id_len];
+
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * (300 + session_id_len), "HTTP/1.1 200 OK\r\n"
+                                                                "Content-Type: application/json;charset=UTF-8\r\n"
+                                                                "Date: %s\r\n"
+                                                                "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d"
+                                                                , date, session_id, session_id_lifespan * 60);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+    return 0;
 }

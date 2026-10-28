@@ -85,12 +85,16 @@ int send_http_internal_server_error(int client_fd, char* error);
 
 int send_http_bad_request(int client_fd);
 
+int send_http_unauthorized(int client_fd);
+
+int send_http_ok_set_cookie(int client_fd, char* session_id, int session_id_lifespan);
+
 /////////////////////////////////////////////////
 //http request handlers
 
 int http_logout_routine(int client_fd, char* buffer);
 
-
+int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan);
 
 /////////////////////////////////////////////////
 

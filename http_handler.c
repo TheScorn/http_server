@@ -744,7 +744,7 @@ void *handle_client(void *arg) {
     //obsługa wylogowania
     else if(connection_type == LOGOUT) {
         http_logout_routine(client_fd, buffer);
-        
+        close(client_fd);
         free(buffer);
         return NULL;
     }

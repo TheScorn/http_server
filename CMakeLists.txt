@@ -8,6 +8,8 @@ configure_file(http_server_header.h.in ${PROJECT_SOURCE_DIR}/http_server_header.
 
 add_executable(http_server.out http_server.c)
 
+
+
 #lib with function http_handler
 add_library(http_handler http_handler.c)
 set_target_properties(http_handler PROPERTIES PUBLIC_HEADER http_server_header)
@@ -16,10 +18,18 @@ set_target_properties(http_handler PROPERTIES PUBLIC_HEADER http_server_header)
 add_library(http_logout http_logout.c)
 set_target_properties(http_logout PROPERTIES PUBLIC_HEADER http_server_header)
 
+#lib with function http_login_handler
+add_library(http_login http_login.c)
+set_target_properties(http_login PROPERTIES PUBLIC_HEADER http_server_header)
+
+
+
 
 #lib with basic http protocol functionalities
 add_library(http_functions http_functions.c)
 set_target_properties(http_functions PROPERTIES PUBLIC_HEADER http_server_header)
+
+
 
 
 

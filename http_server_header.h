@@ -83,6 +83,7 @@ int send_http_found_main(int client_fd, bool clear_cookie);
 
 int send_http_internal_server_error(int client_fd, char* error);
 
+int send_http_bad_request(int client_fd);
 
 /////////////////////////////////////////////////
 //http request handlers

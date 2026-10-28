@@ -8,7 +8,7 @@
  * @brief Function for handling LOGOUT requests.
  * 
  * @param client_fd socket descriptor - connection should be established before using this function.
- * This function automatically closes socket after the response is processed.
+ * This function does not automatially close client_fd socket.
  * 
  * @param buffer pointer to null-terminated string with message recieved from user
  * 
@@ -30,19 +30,15 @@ int http_logout_routine(int client_fd, char* buffer) {
         if(drop_session_status == -1) {
             fprintf(stderr, "Database could not be opened, sending 500.\n");
             if(send_http_internal_server_error(client_fd, NULL) != 0) {
-                close(client_fd);
                 return -1;
             }
-            close(client_fd);
             return -2;
         }
         else if(drop_session_status == -2) {
             fprintf(stderr, "DROP Query execution unsuccessful, sending 500.\n");
             if(send_http_internal_server_error(client_fd, NULL) != 0) {
-                close(client_fd);
                 return -1;
             }
-            close(client_fd);
             return -3;
         }
         else if(drop_session_status == -4) {
@@ -51,11 +47,9 @@ int http_logout_routine(int client_fd, char* buffer) {
     }
 
     if(send_http_found_main(client_fd, true) != 0) {
-        close(client_fd);
         return -1;
     }
 
-    close(client_fd);
     return 0;
 }
 

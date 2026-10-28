@@ -165,3 +165,26 @@ int send_http_found_main(int client_fd, bool clear_cookie) {
     return 0;
 }
 
+/**
+ * @brief Send Bad Request.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_bad_request(int client_fd) {
+    char date[50];
+    http_current_time(date);
+
+    char response[250];
+    snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n", date);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+}

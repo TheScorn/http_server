@@ -12,6 +12,17 @@ add_executable(http_server.out http_server.c)
 add_library(http_handler http_handler.c)
 set_target_properties(http_handler PROPERTIES PUBLIC_HEADER http_server_header)
 
+#lib with function http_logout_hander
+add_library(http_logout http_logout.c)
+set_target_properties(http_logout PROPERTIES PUBLIC_HEADER http_server_header)
+
+
+#lib with basic http protocol functionalities
+add_library(http_functions http_functions.c)
+set_target_properties(http_functions PROPERTIES PUBLIC_HEADER http_server_header)
+
+
+
 #lib_with_function handle_arguments
 add_library(argument_handler argument_handler.c)
 set_target_properties(argument_handler PROPERTIES PUBLIC_HEADER http_server_header)
@@ -47,7 +58,7 @@ set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP NAS_API)
+target_link_libraries(http_server.out PUBLIC http_handler http_logout http_functions argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP NAS_API)
 
 option(ENABLE_DEBUG "Enable DEBUG mode" OFF)
 

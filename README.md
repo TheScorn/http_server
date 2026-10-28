@@ -7,7 +7,10 @@ Przebudowa do praw admina.
 Nowe założenia do stron. Strony są albo ogólnodostępne(main, login) albo dostępne po zalogowaniu i mają treść dobraną do użytkownika (NAS). Specjalną kategeorią są strony dla admina (Status - testowa póki co). Tam użytkownik musi mieć flagę elevated.
 
 TODO:
-Poprawki
+Podział handlera na osobne moduły.
+
+
+Poprawki:
 2. Komunikat o błędnym logowaniu wyświetlany na stronie
 5. Poprawki w regexach z POST tak żeby były bardziej konkretne.
 6. Czasowe usuwanie starych tokenów. Ważne jeśli serwer miałby dłużej działać nierestartowany.
@@ -25,6 +28,12 @@ Poprawki
 
 22. Szyfrowana baza danych
 23. Szyfrowane połączenie z NAS by TLS
+24. Ukrywane guziki stron administracyjnych dla zwykłych użytkowników
+
+
+Podstrona statusowa:
+
+
 
 Testy:
 1. Testy jednostkowe dla prostych funkcji

@@ -302,24 +302,6 @@ void generate_session_id(int length, char* token) {
     
 }
 
-/**
- * @brief HTTP Date
- * 
- * Function produces HTTP formated GMT date and time.
- * 
- * @param date address for the date
- * 
- * @return 0 if execution successful
- */
-int http_current_time(char* date) {
-
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    
-    strftime(date, 50, "%a, %d %b %Y %H:%M:%S GMT", &tm);
-    return 0;
-
-}
 
 
 /**

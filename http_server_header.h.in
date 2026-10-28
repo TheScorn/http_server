@@ -69,6 +69,30 @@ int load_file(char* file_path, char** file);
 
 int add_response_header(char* raw, const char* file_ext, char** processed);
 
+
+////////////////////////////////////////////////
+//http_functions prototypes
+
+int send_routine(int client_fd, char* message);
+
+int http_current_time(char* date);
+
+int send_http_found_login(int client_fd);
+
+int send_http_found_main(int client_fd, bool clear_cookie);
+
+int send_http_internal_server_error(int client_fd, char* error);
+
+
+/////////////////////////////////////////////////
+//http request handlers
+
+int http_logout_routine(int client_fd, char* buffer);
+
+
+
+/////////////////////////////////////////////////
+
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
 int get_file_info(char *filename, struct file_info_struct* page_info);
@@ -97,8 +121,6 @@ void generate_session_id(int length, char* token);
 
 
 int authenticate(char* login, char* password, int* user_id);
-
-int http_current_time(char* date);
 
 int save_session_id(char* session_id, int user_id, time_t expiry);
 

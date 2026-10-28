@@ -743,60 +743,9 @@ void *handle_client(void *arg) {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //obsługa wylogowania
     else if(connection_type == LOGOUT) {
-        //wyciągamy session_id
-        //jeśli istnieje sesja (sprawdzamy czy dostarczone jest ciasteczko i czy jest w bazie)
-        //to odnajdujemy je i usuwamy
-
-        
-        //wysyłamy wyłączanie cookie na stronie zawsze
-        
-        regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
-        if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-            buffer[matches[1].rm_eo] = '\0';
-            char* session_id = buffer + matches[1].rm_so;
-            session_id[strcspn(session_id, "\r\n")] = '\0';
-
-            int drop_session_status = drop_session(session_id);
-            if(drop_session_status == -1) {
-                fprintf(stderr, "Database could not be opened.\n");
-                free(buffer);
-                close(client_fd);
-                return NULL;
-            }
-            else if(drop_session_status == -2) {
-                fprintf(stderr, "DROP Query execution unsuccessful.\n");
-                free(buffer);
-                close(client_fd);
-                return NULL;
-            }
-            else if(drop_session_status == -4) {
-                //wysyłamy warning ale nie przerywamy wykonywania
-                //warning świadczy o tym że dwukrotnie został wstawiony ten sam token
-                fprintf(stderr, "Warning! Multiple session ids removed on one logout message.\n");
-            }
-
-        }
-        
-        char response[250];
-        char date[50];
-        http_current_time(date);
-
-        snprintf(response, 250, "HTTP/1.1 302 Found\r\nLocation: main_page.html\r\nDate: %s\r\nSet-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
-        size_t response_len = strlen(response);
-
-
-        size_t total = 0;
-        while(total < response_len) {
-            ssize_t n = send(client_fd, response + total, response_len - total, 0);
-            if(n <= 0) {
-                fprintf(stderr, "0 bytes sent. Breaking.\n");
-                break;
-            }
-            total += n;
-        }
+        http_logout_routine(client_fd, buffer);
         
         free(buffer);
-        close(client_fd);
         return NULL;
     }
 

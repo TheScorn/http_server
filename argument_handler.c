@@ -94,6 +94,24 @@ int handle_arguments(int argc, char **argv, struct input_args_struct *args) {
             args->session_id_lifespan = atoi(argv[i + 1]);
             i++;
         }
+        else if(strcasecmp(argv[i], "-uriMaxlen") == 0) {
+
+            if(i + 1 >= argc) {
+                args->print_help = true;
+                fprintf(stderr, "Value expected after flag \"-uriMaxlen\".\n");
+                return -1;
+            }
+
+            if(verify_int(argv[i + 1]) != 0) {
+                args->print_help = true;
+                fprintf(stderr, "Value for flag \"-uriMaxlen\" expected to be int type.\n");
+                return -2;
+            }
+
+            args->uri_max_len = atoi(argv[i + 1]);
+            i++;
+
+        }
         else if(strcasecmp(argv[i], "-NAS") == 0) {
 
             if(i + 1 >= argc) {

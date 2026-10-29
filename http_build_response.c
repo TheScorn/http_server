@@ -15,21 +15,14 @@
  * @param file_path char pointer to null-terminated string where path to file is stored.
  * 
  * @param file pointer to char pointer used to store loaded file.
- * After execution memory will be dynamically allocated and needs to be manually freed.
+ * After successful execution memory will be dynamically allocated and needs to be manually freed.
+ * 
+ * @return 0 if execution successful, -1 if file could not be opened.
  */
 int load_file(char* file_path, char** file) {
     
     int file_fd = open(file_path, O_RDONLY);
     if(file_fd == -1) {
-        char date[50];
-        http_current_time(date);
-        *file = (char*)malloc(sizeof(char) * 250);
-        snprintf(*file, 250 * (sizeof(char)), 
-                "HTTP/1.1 404 Not Found\r\n"
-                "Date: %s\r\n"
-                "Content-Type: text/plain\r\n"
-                "404 Not Found", date);
-        
         return -1;
     }
 

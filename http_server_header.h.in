@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <netinet/in.h>
+#include <regex.h>
 
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
@@ -15,6 +16,7 @@ struct input_args_struct {
     bool verbose_init;
     bool print_help;
     uint16_t selected_port;
+    int uri_max_len;
     int session_id_length;
     int session_id_lifespan;
     struct sockaddr_in NAS_add;
@@ -26,6 +28,7 @@ struct handle_args_struct {
     int client_fd;
     int session_id_length;
     int session_id_lifespan;
+    int uri_max_len;
     struct sockaddr_in NAS_add;
 };
 
@@ -77,7 +80,7 @@ int send_routine(int client_fd, char* message);
 
 int http_current_time(char* date);
 
-int send_http_found_login(int client_fd);
+int send_http_found_login(int client_fd, bool clear_cookie);
 
 int send_http_found_main(int client_fd, bool clear_cookie);
 
@@ -89,8 +92,15 @@ int send_http_unauthorized(int client_fd);
 
 int send_http_ok_set_cookie(int client_fd, char* session_id, int session_id_lifespan);
 
+int send_http_URI_too_long(int client_fd, int uri_max_len);
+
+int send_http_not_found(int client_fd);
+
+int send_http_Forbidden(int client_fd, char* error);
 /////////////////////////////////////////////////
 //http request handlers
+
+int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len);
 
 int http_logout_routine(int client_fd, char* buffer);
 
@@ -154,5 +164,7 @@ int last_occurence(char* str, char chr);
 #define MAX_NUMBER_OF_PAGE_VAR 10
 #define DEFAULT_NAS_IP "127.0.0.1"
 #define DEFAULT_NAS_PORT 54004
+#define DEFAULT_URI_MAX_LEN 512
+#define URI_MAX_LEN_LIMIT 4096
 
 #endif

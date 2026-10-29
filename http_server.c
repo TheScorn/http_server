@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
     input_args.verbose_init = VERBOSE_INIT_DEFAULT;
     input_args.print_help = false;
     input_args.selected_port = DEFAULT_PORT;
+    input_args.uri_max_len = DEFAULT_URI_MAX_LEN;
     input_args.session_id_length = DEFAULT_SESSION_ID_LENGTH;
     input_args.session_id_lifespan = DEFAULT_SESSION_ID_LIFESPAN;
     input_args.NAS_add.sin_port = htons(DEFAULT_NAS_PORT);
@@ -72,6 +73,9 @@ int main(int argc, char **argv) {
 
     if(input_args.verbose_init) {
         printf("Session lifespan: %d minutes\n", input_args.session_id_lifespan);
+    }
+    if(input_args.verbose_init) {
+        printf("URI max length: %d\n", input_args.uri_max_len);
     }
 
     //db connection test
@@ -183,6 +187,7 @@ int main(int argc, char **argv) {
         memcpy(&(handle_args->client_fd), client_fd, sizeof(int));
         memcpy(&(handle_args->session_id_length), &(input_args.session_id_length), sizeof(int));
         memcpy(&(handle_args->session_id_lifespan), &(input_args.session_id_lifespan), sizeof(int));
+        memcpy(&(handle_args->uri_max_len), &(input_args.uri_max_len), sizeof(int));
         memcpy(&(handle_args->verbose_init), &(input_args.verbose_init), sizeof(bool));
         memcpy(&(handle_args->test_passed), &(NAS_connection), sizeof(bool));
         memcpy(&(handle_args->NAS_add), &(input_args.NAS_add), sizeof(struct sockaddr_in));

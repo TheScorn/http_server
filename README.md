@@ -9,6 +9,12 @@ Nowe założenia do stron. Strony są albo ogólnodostępne(main, login) albo do
 TODO:
 Podział handlera na osobne moduły.
 
+Usuwamy dobieranie typów połączeń - można się pozbyć drugiego ifa w handlerze.
+Próbujemy znaleźć tyle ile się da w regexie tak żeby nie używać go kilka razy - szczególnie w get
+
+
+Dodajemy 411 Length Required do Obsługi NAS PUT
+
 
 Poprawki:
 2. Komunikat o błędnym logowaniu wyświetlany na stronie

@@ -253,7 +253,7 @@ char* get_password(char * authorization) {
  */
 char *url_decode(const char *src) {
     size_t src_len = strlen(src);
-
+    
     char *decoded = (char *)malloc(src_len + 1);
 
     size_t decoded_len = 0;

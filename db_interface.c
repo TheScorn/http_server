@@ -289,7 +289,7 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -4;
-    }
+    }   
 
     //zapisanie info o uzytkowniku
     const char* name = sqlite3_column_text(stmt, 0);

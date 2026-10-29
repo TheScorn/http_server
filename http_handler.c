@@ -37,6 +37,7 @@ void *handle_client(void *arg) {
     int client_fd = args->client_fd;
     int session_id_length = args->session_id_length;
     int session_id_lifespan = args->session_id_lifespan;
+    int uri_max_len = args->uri_max_len;
     struct sockaddr_in NAS_add;
     memcpy(&NAS_add, &(args->NAS_add), sizeof(struct sockaddr_in));
 
@@ -78,13 +79,22 @@ void *handle_client(void *arg) {
     regmatch_t matches[2];
     
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        connection_type = GET;
+        //czy wyciągamy scieżkę przed funkcją czy przekazujemy matches?
+
+        //przekazanie matches daje lepszą modularność, można wtedy spróbować zrobić to samo w login, logout
+        http_get_routine(client_fd, buffer, matches, uri_max_len);
+        close(client_fd);
+        free(buffer);
+        return NULL;
     }
 
-    //////////////////////////sprawdzamy czy typ 2
+    //////////////////////////connection_type LOGIN
     regcomp(&regex, "^POST[[:space:]]+/[[:space:]]+HTTP/1\\.[01]\r?\n(.|\n)*Content-Type:[[:space:]]*multipart/form-data;[[:space:]]*boundary=([^\r\n]+)(.|\n)*name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        connection_type = LOGIN;
+        http_login_routine(client_fd, buffer, session_id_length, session_id_lifespan);
+        close(client_fd);
+        free(buffer);
+        return NULL;
     }
 
     
@@ -92,7 +102,10 @@ void *handle_client(void *arg) {
     //POST bo GET nie powinno zmieniać stanu strony
     regcomp(&regex, "^POST[[:space:]]/logout[[:space:]]HTTP/1.1", REG_EXTENDED);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        connection_type = LOGOUT;
+        http_logout_routine(client_fd, buffer);
+        close(client_fd);
+        free(buffer);
+        return NULL;
     }
 
     regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ]*)[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)*([\r\n|\r|\n]|$)", REG_EXTENDED);
@@ -102,519 +115,7 @@ void *handle_client(void *arg) {
     }
 
 
-    //Obsługa http request
-    if(connection_type == GET) {
-        struct client_info_struct client_info;
-        client_info.logged_in = false;
-        client_info.elevated = 0;
-        strncpy(client_info.name, "null", 30);
-        strncpy(client_info.password, "default", 30);
- 
 
-
-        //szukamy jaką stronę trzeba wysłać
-        regcomp(&regex, "^GET /([^ ]*) HTTP/1", REG_EXTENDED);
-
-        //nie sprawdzamy czy jest jakiś match bo to już nam ogarnął regex do typu połączenia
-        regexec(&regex, buffer, 2, matches, 0);
-
-        //zmieniamy koncepcję, zamiast kopiować cały bufor
-        //liczymy długość page_name
-        //robimy tyle miejsca ile potrzeba i kopiujemy tylko to
-
-        size_t page_name_len = matches[1].rm_eo - matches[1].rm_so;
-        char *page_name_buffer = (char *)malloc(sizeof(char) * (page_name_len + 1));
-
-
-        snprintf(page_name_buffer, sizeof(char) * (page_name_len + 1), "%s", buffer + matches[1].rm_so);
-        
-
-        //char z nazwą pliku
-        char *file_name = url_decode(page_name_buffer);
-        free(page_name_buffer);
-
-
-        //rozszerzenie pliku
-        char file_ext[32];
-        strcpy(file_ext, get_file_extension(file_name));
-        
-        //miejsce na odpowiedź
-        //char* response = (char *)malloc(buffer_size * 2 * sizeof(char));
-        
-
-
-
-        //struct file_info_struct file_info; //struktura do przechowywania info o stronie
-        struct file_info_struct* file_info = (struct file_info_struct*)malloc(sizeof(struct file_info_struct));
-        int db_file_info_status = get_file_info(file_name, file_info);
-        free(file_name);
-
-        #ifdef DEBUG
-        printf("DEBUG mode: get_file_info returned with code: %d, file_name freed.\n", db_file_info_status);
-        #endif
-
-
-        if(db_file_info_status == -1) {
-            fprintf(stderr, "Database could not be opened.\n");
-            free(buffer);
-            free(file_info);
-            close(client_fd);
-            return NULL;
-        }
-        else if(db_file_info_status == -2) {
-            fprintf(stderr, "Select query on Files unsuccessful.\n");
-            free(buffer);
-            free(file_info);
-            close(client_fd);
-            return NULL;
-        }
-        else if(db_file_info_status == -3) {
-            
-            char response[200];
-            char date[50];
-            http_current_time(date);
-
-            snprintf(response, sizeof(char) * 200,
-            "HTTP/1.1 404 Not Found\r\n"
-            "Content-Type: text/plain\r\n"
-            "Date: %s\r\n"
-            "404 Not Found", date);
-
-            size_t response_len = strlen(response);
-            
-            size_t total = 0;
-            while(total < response_len) {
-                ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                if(n <= 0) {
-                    fprintf(stderr, "0 bytes sent. Breaking.\n");
-                    break;
-                }
-                total += n;
-            }
-
-
-            
-            free(buffer);
-            free(file_info);
-            close(client_fd);
-            return NULL;
-        }
-
-        //jednak chcemy zawsze sprawdzać najpierw czy jest ciasteczko żeby móc dodać info o zalogowanym użytkowniku
-        //newet jeśli strona nie wymaga logowania
-
-        regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
-        if(regexec(&regex, buffer, 2, matches, 0) != 0) {
-            //jeśli nie ma ciasteczka
-            //sprawdzamy czy strona wymaga logowania
-            #ifdef DEBUG
-            printf("DEBUG mode: No-cookie entered.\n");
-            #endif
-
-            if(file_info->zone_type != 0) {
-                #ifdef DEBUG
-                printf("DEBUG mode: No-cookie auth entered.\n");
-                #endif
-
-                //jeśli nie ma ciesteczka a jest wymagane
-                char response[200];
-                char date[50];
-                http_current_time(date);
-
-                snprintf(response, sizeof(char) * 200,
-                    "HTTP/1.1 302 Found\r\n"
-                    "Date: %s\r\n"
-                    "Location: /login_page.html"
-                    , date);
-
-                size_t response_len = strlen(response);
-
-                size_t total = 0;
-                while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                    if(n <= 0) {
-                        fprintf(stderr, "0 bytes sent. Breaking.\n");
-                        break;
-                    }
-                    total += n;
-                }
-
-
-                free(buffer);
-                free(file_info);
-                close(client_fd);
-                return NULL;
-
-            }
-            else {
-                #ifdef DEBUG
-                printf("DEBUG mode: No-cookie No-auth entered.\n");
-                #endif
-                //jeśli logowanie nie jest wymagane
-                free(buffer);
-
-                #ifdef DEBUG
-                printf("DEBUG mode: buffer freed.\n");
-                #endif
-                
-                char* file;
-
-                int load_file_status = load_file(file_info->file_path, &file);
-                free(file_info);
-                
-                #ifdef DEBUG
-                printf("DEBUG mode: buffer freed, build_response_status: %d, response: %s,file_info freed.\n", load_file_status, file);
-                #endif
-
-                size_t file_len = strlen(file);
-                if(load_file_status == -1) {
-                    fprintf(stderr, "File stated in data base but could not be opened.\n");
-
-                    size_t total = 0;
-                    while(total < file_len) {
-                        ssize_t n = send(client_fd, file + total, file_len - total, 0);
-                        if(n <= 0) {
-                            fprintf(stderr, "0 bytes sent. Breaking.\n");
-                            break;
-                        }
-                        total += n;
-                    }
-
-
-                    free(file);
-                    close(client_fd);
-                    return NULL;
-                }
-                
-
-                ///////////////////////////////////////////////////////////////////
-                //logika do uzupełniania
-                //budujemy słownik ze zmiennych
-                char keys[MAX_NUMBER_OF_PAGE_VAR][20] = {"version_major","version_minor","logged_in","username"};
-                char vals[MAX_NUMBER_OF_PAGE_VAR][30];
-                char version_major[4];
-                char version_minor[4];
-                char logged_in[2];
-                snprintf(version_major, 4, "%d", HTTP_SERVER_VERSION_MAJOR);
-                snprintf(version_minor, 4, "%d", HTTP_SERVER_VERISON_MINOR);
-                snprintf(logged_in, 2, "%d", (int)client_info.logged_in);
-                memcpy(vals[0], version_major, strlen(version_major) + 1);
-                memcpy(vals[1], version_minor, strlen(version_minor) + 1);
-                memcpy(vals[2], logged_in, 2);
-                memcpy(vals[3], "null", 5);
-
-                char* processed_file = (char*)calloc(file_len + 1, 1);
-                int PPHP_status = PPHP_key_val_insert2(processed_file, file_len + 1, file, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
-
-                free(file);
-
-                #ifdef DEBUG
-                printf("DEBUG mode: complete_response allocated, PPHP_status: %d, response freed.\n", PPHP_status);
-                #endif
-
-
-                file_len = strlen(processed_file);
-
-                //po przeprocesowaniu pliku dodajemy header
-                char* response;
-                add_response_header(processed_file, file_ext, &response);
-                free(processed_file);
-
-                size_t response_len = strlen(response);
-
-                size_t total = 0;
-                while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                    if(n <= 0) {
-                        fprintf(stderr, "0 bytes sent. Breaking.\n");
-                        break;
-                    }
-                    total += n;
-                }
-
-        
-                free(response);
-                close(client_fd);
-                return NULL;
-
-
-            }
-
-
-        }
-        else {
-            //jeśli mamy ciasteczko
-            #ifdef DEBUG 
-            printf("DEBUG mode: Cookie entered.\n");
-            #endif
-
-            buffer[matches[1].rm_eo] = '\0';
-
-            char* session_id = buffer + matches[1].rm_so;
-            session_id[strcspn(session_id, "\r\n")] = '\0';
-
-            int authorize_status = authorize(session_id, &client_info);
-            if(authorize_status == -1) {
-                fprintf(stderr, "Database could not be opened.\n");
-                free(buffer);
-                free(file_info);
-                close(client_fd);
-                return NULL;
-            }
-            else if(authorize_status == -2) {
-                fprintf(stderr, "Select query on Sessions unsuccessful.\n");
-                free(buffer);
-                free(file_info);
-                close(client_fd);
-                return NULL;
-            }
-            else if(authorize_status == -3 || authorize_status == -4) {
-                //jeśli tokena nie ma w bazie lub jeśli jest expired
-                //wysyłamy redirect do logowania oraz czyścimy nieprawidłowe ciastko
-                //potem można pomyśleć o rozdzieleniu tego na dwa przypadki
-                //póki nie ma mechanizmu usuwania sessionId to nie ma sensu
-                char date[50];
-                http_current_time(date);
-                char response[200];
-
-
-                snprintf(response, buffer_size,
-                    "HTTP/1.1 302 Found\r\n"
-                    "Date: %s\r\n"
-                    "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly\r\n"
-                    "Location: /login_page.html"
-                    , date);
-
-                size_t response_len = strlen(response);
-                
-                size_t total = 0;
-                while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                    if(n <= 0) {
-                        fprintf(stderr, "0 bytes sent. Breaking.\n");
-                        break;
-                    }
-                    total += n;
-                }
-
-                free(buffer);
-                free(file_info);
-                close(client_fd);
-                return NULL;
-
-            }
-
-            client_info.logged_in = true;
-            
-
-            
-            //jeśli strona jest typu 0
-            if(file_info->zone_type == 0 || file_info->zone_type == 2) {
-                //nie musimy sprawdzać praw użytkownika do strony
-                //też w przypadku strony typu 2, jeśli użytkownik jest zalogowany to powinna się wyświetlić.
-                free(buffer);
-
-                #ifdef DEBUG
-                printf("DEBUG mode: Cookie No-auth entered.\n");
-                #endif
-
-                char* file;
-
-                int load_file_status = load_file(file_info->file_path, &file);
-                free(file_info);
-
-                size_t file_len = strlen(file);
-                if(load_file_status == -1) {
-                    fprintf(stderr, "File stated in data base but could not be opened.\n");
-
-                    size_t total = 0;
-                    while(total < file_len) {
-                        ssize_t n = send(client_fd, file + total, file_len - total, 0);
-                        if(n <= 0) {
-                            fprintf(stderr, "0 bytes sent. Breaking.\n");
-                            break;
-                        }
-                        total += n;
-                    }
-
-                    free(file);
-                    close(client_fd);
-                    return NULL;
-                }
-                
-                //Użytkownik zalogowany więc można użyć PHP z użytkownikiem
-
-                char keys[MAX_NUMBER_OF_PAGE_VAR][20] = {"version_major","version_minor","logged_in","username"};
-                char vals[MAX_NUMBER_OF_PAGE_VAR][30];
-                char version_major[4];
-                char version_minor[4];
-                char logged_in[2];
-                char username[33];
-                snprintf(version_major, 4, "%d", HTTP_SERVER_VERSION_MAJOR);
-                snprintf(version_minor, 4, "%d", HTTP_SERVER_VERISON_MINOR);
-                snprintf(logged_in, 2, "%d", (int)client_info.logged_in);
-                snprintf(username, 33, "\"%s\"", client_info.name);
-                memcpy(vals[0], version_major, strlen(version_major)+ 1);
-                memcpy(vals[1], version_minor, strlen(version_minor)+ 1);
-                memcpy(vals[2], logged_in, 2);
-                memcpy(vals[3], username, strlen(username) + 1);
-
-                char* processed_file = (char*)malloc(file_len + 1);
-                int PPHP_status = PPHP_key_val_insert(processed_file, file_len + 1, file, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
-                free(file);
-
-                file_len = strlen(processed_file);
-
-                char* response;
-                add_response_header(processed_file, file_ext, &response);
-                free(processed_file);
-
-                size_t response_len = strlen(response);
-
-                size_t total = 0;
-                while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                    if(n <= 0) {
-                        fprintf(stderr, "0 bytes sent. Breaking.\n");
-                        break;
-                    }
-                    total += n;
-                }
-
-                free(response);
-                close(client_fd);
-                return NULL;
-
-
-            }
-            else if(file_info->zone_type == 1) { //zone tylko dla elevated
-                free(buffer);
-                if(client_info.elevated == 0) {
-                    
-                    free(file_info);
-                    //user nie ma praw do strony
-                    char date[50];
-                    http_current_time(date);
-
-                    char response[200];
-
-                    snprintf(response, 200,
-                    "HTTP/1.1 403 Forbidden\r\n"
-                    "Date: %s\r\n"
-                    "Content-Type: text/html"
-                    , date);
-
-                    size_t response_len = strlen(response);
-
-                    size_t total = 0;
-                    while(total < response_len) {
-                        ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                        if(n <= 0) {
-                            fprintf(stderr, "0 bytes sent. Breaking.\n");
-                            break;
-                        }
-                        total += n;
-                    }
-                    
-                    close(client_fd);
-                    return NULL;
-                }
-
-                //jeśli ma to tak samo jak wcześniej
-
-                char* file;
-
-                int load_file_status = load_file(file_info->file_path, &file);
-                free(file_info);
-
-                size_t file_len = strlen(file);
-                if(load_file_status == -1) {
-                    fprintf(stderr, "File stated in data base but could not be opened.\n");
-
-                    size_t total = 0;
-                    while(total < file_len) {
-                        ssize_t n = send(client_fd, file + total, file_len - total, 0);
-                        if(n <= 0) {
-                            fprintf(stderr, "0 bytes sent. Breaking.\n");
-                            break;
-                        }
-                        total += n;
-                    }
-
-                    free(file);
-                    close(client_fd);
-                    return NULL;
-                }
-
-                //Użytkownik zalogowany więc można użyć PHP z użytkownikiem
-                char keys[MAX_NUMBER_OF_PAGE_VAR][20] = {"version_major","version_minor","logged_in","username"};
-                char vals[MAX_NUMBER_OF_PAGE_VAR][30];
-                char version_major[4];
-                char version_minor[4];
-                char logged_in[2];
-                char username[33];
-                snprintf(username, 33, "\"%s\"", client_info.name);
-                snprintf(version_major, 4, "%d", HTTP_SERVER_VERSION_MAJOR);
-                snprintf(version_minor, 4, "%d", HTTP_SERVER_VERISON_MINOR);
-                snprintf(logged_in, 2, "%d", (int)client_info.logged_in);
-                memcpy(vals[0], version_major, strlen(version_major) + 1);
-                memcpy(vals[1], version_minor, strlen(version_minor)+ 1);
-                memcpy(vals[2], logged_in, 2);
-                memcpy(vals[3], username, strlen(username) + 1);
-
-                char* processed_file = (char*)malloc(file_len + 1);
-                int PPHP_status = PPHP_key_val_insert(processed_file, file_len + 1, file, keys, vals, MAX_NUMBER_OF_PAGE_VAR);
-                free(file);
-
-                file_len = strlen(processed_file);
-
-                char* response;
-                add_response_header(processed_file, file_ext, &response);
-                free(processed_file);
-
-                size_t response_len = strlen(response);
-
-                size_t total = 0;
-                while(total < response_len) {
-                    ssize_t n = send(client_fd, response + total, response_len - total, 0);
-                    if(n <= 0) {
-                        fprintf(stderr, "0 bytes sent. Breaking.\n");
-                        break;
-                    }
-                    total += n;
-                }
-
-                free(response);
-                close(client_fd);
-                return NULL;
-
-
-
-            }
-        }
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //obsługa logowania
-    else if(connection_type == LOGIN) {
-
-        http_login_routine(client_fd, buffer, session_id_length, session_id_lifespan);
-        close(client_fd);
-        free(buffer);
-        return NULL;
-    }
-
-
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //obsługa wylogowania
-    else if(connection_type == LOGOUT) {
-        http_logout_routine(client_fd, buffer);
-        close(client_fd);
-        free(buffer);
-        return NULL;
-    }
 
     else if(connection_type == NAS) {
 
@@ -629,13 +130,23 @@ void *handle_client(void *arg) {
         char* session_id = (char*)malloc(sizeof(char) * (session_id_length + 1));
         snprintf(session_id, sizeof(char) * (session_id_length + 1), "%s", buffer + NAS_matches[3].rm_so);
 
+        #ifdef DEBUG
+        printf("DEBUG mode: session_id: %s\n", session_id);
+        #endif
+
         struct client_info_struct client_info;
         client_info.logged_in = false;
         client_info.elevated = 0;
         strncpy(client_info.name, "null", 30);
         strncpy(client_info.password, "default", 30);
 
+        
+
+
         int authorize_status = authorize_NAS(session_id, &client_info);
+        #ifdef DEBUG
+        printf("DEBUG mode: authorize_NAS_status: %d\n", authorize_status);
+        #endif
         free(session_id);
         if(authorize_status == -1) {
             fprintf(stderr, "Database could not be opened.\n");

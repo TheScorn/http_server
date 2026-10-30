@@ -15,6 +15,9 @@ Próbujemy znaleźć tyle ile się da w regexie tak żeby nie używać go kilka 
 
 Dodajemy 411 Length Required do Obsługi NAS PUT
 
+Dodajemy podział na błąd o braku tokena w bazie i na brak info o logowaniu do NAS
+(nie każdy użytkownik serwera http musi mieć konto w NASie)
+
 
 Poprawki:
 2. Komunikat o błędnym logowaniu wyświetlany na stronie

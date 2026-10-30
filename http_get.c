@@ -21,9 +21,8 @@
  * Every positive coded error is assumed to be originating from the user,
  * negative coded errors are internal and should be treated as fatal.
  * List of fatal errors: -1 if send failed inside any function,
- * -2 if Database could not be opened, -3 if SELECT query failed,
+ * -2 if Database could not be opened, -3 bind or prepare failed,
  * -4 if file could not be opened despite beeing resolved earlier in Database,
- * -5 
  * 
  * List of user-errors: 1 if URI sent was too long,
  * 2 if page was not found, 3 if invalid token presented,
@@ -71,13 +70,20 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
         return -2;
     }
     else if(status == -2) {
-        fprintf(stderr, "SELECT Query on Files failed, sending 500.\n");
+        fprintf(stderr, "Prepare failed, sending 500.\n");
         if(send_http_internal_server_error(client_fd, NULL) != 0) {
             return -1;
         }
         return -3;
     }
     else if(status == -3) {
+        fprintf(stderr, "Bind failed, sending 500.\n");
+        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            return -1;
+        }
+        return -3;
+    }
+    else if(status == -4) {
         if(send_http_not_found(client_fd) != 0) {
             return -1;
         }
@@ -185,7 +191,14 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
             }
             return -3;
         }
-        else if((status == -3 || status == -4) && file_info.zone_type != 0) {
+        else if(status == -3) {
+            fprintf(stderr, "Bind failed, sending 500.\n");
+            if(send_http_internal_server_error(client_fd, NULL) != 0) {
+                return -1;
+            }
+            return -3;
+        }
+        else if((status == -4 || status == -5) && file_info.zone_type != 0) {
             //if token exists but its incorrect and the zone requires login
             //remove token -> tell user to login again
 

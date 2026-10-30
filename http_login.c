@@ -8,7 +8,7 @@
  * @param client_fd socket descriptor - connection should be established before using this function.
  * This funcion does not automatically close client_fd socket.
  * 
- * @param buffer pointer to null-terminated string with message recieved from user
+ * @param buffer pointer to null-terminated string with message recieved from user.
  * 
  * @param session_id_length int that determines lenght of session tokens.
  * 
@@ -16,9 +16,10 @@
  * 
  * @return 0 if execution successful, -1 for every send error,
  * -2 if no login info found in message, -3 if database could not be opened,
- * -4 if error occured in SELECT Query, -5 if execution failed,
- * -6 if database could not be opened during token save,
- * -7 if INSERT query failed, 
+ * -4 if prepare failed, -5 if bind failed, 
+ * -6 if execution failed,
+ * -7 if database could not be opened during token save,
+ * -8 if prepare failed, -9 if bind failed, -10 if execution of INSERT query failed.
  * 1 if authorization was not passed.
  */
 int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan) {
@@ -59,20 +60,27 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
         return -3;
     }
     else if(authentication_status == -2) {
-        fprintf(stderr, "Error occured in SELECT Query.\n");
+        fprintf(stderr, "Prepare failed, sending 500.\n");
         if(send_http_internal_server_error(client_fd, NULL) != 0) {
             return -1;
         }
         return -4;
     }
-    else if(authentication_status == -5) {
-        fprintf(stderr, "Execution failed.\n");
+    else if(authentication_status == -3) {
+        fprintf(stderr, "Bind failed, sending 500.\n");
         if(send_http_internal_server_error(client_fd, NULL) != 0) {
             return -1;
         }
         return -5;
     }
-    else if(authentication_status == -3 || authentication_status == -4) {
+    else if(authentication_status == -5) {
+        fprintf(stderr, "Execution failed, sending 500.\n");
+        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            return -1;
+        }
+        return -6;
+    }
+    else if(authentication_status == -4 || authentication_status == -6) {
         if(send_http_unauthorized(client_fd) != 0) {
             return -1;
         }
@@ -92,18 +100,32 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
     //token saving
     int save_token_status = save_session_id(session_id, user_id, expiry);
     if(save_token_status == -1) {
-        fprintf(stderr, "Database could not be opened.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
-            return -1;
-        }
-        return -6;
-    }
-    else if(save_token_status == -2) {
-        fprintf(stderr, "INSERT query execution unsuccessful.\n");
+        fprintf(stderr, "Database could not be opened, sending 500.\n");
         if(send_http_internal_server_error(client_fd, NULL) != 0) {
             return -1;
         }
         return -7;
+    }
+    else if(save_token_status == -2) {
+        fprintf(stderr, "Prepare failed, sending 500.\n");
+        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            return -1;
+        }
+        return -8;
+    }
+    else if(save_token_status == -3) {
+        fprintf(stderr, "Bind failed, sending 500.\n");
+        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            return -1;
+        }
+        return -9;
+    }
+    else if(save_token_status == -4) {
+        fprintf(stderr, "Execution failed, sending 500.\n");
+        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            return -1;
+        }
+        return -10;
     }
 
     if(send_http_ok_set_cookie(client_fd, session_id, session_id_lifespan) != 0) {

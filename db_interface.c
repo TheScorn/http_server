@@ -40,7 +40,8 @@ int test_con() {
  * 
  * @param page_info Struct to be updated by the function.
  * 
- * @return 0 if file was found, -1 if no db found, -2 if select query unsuccessful, -3 if no file found.
+ * @return 0 if file was found, -1 if no db found, -2 if prepare failed,
+ * -3 if bind failed, -4 if no file found.
  */
 int get_file_info(char *filename, struct file_info_struct* file_info) {
 
@@ -52,10 +53,11 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
 
     sqlite3_stmt *stmt; //statement sqlite3
 
-    char select_statement[250];
+    //char select_statement[250];
 
-    snprintf(select_statement, 250, "SELECT Files.file_path, Files.zone_id, Zones.zone_name, Zones.zone_type FROM Files INNER JOIN Zones ON Zones.zone_id = Files.zone_id WHERE file_name = \"%s\";", filename);
+    //snprintf(select_statement, 250, "SELECT Files.file_path, Files.zone_id, Zones.zone_name, Zones.zone_type FROM Files INNER JOIN Zones ON Zones.zone_id = Files.zone_id WHERE file_name = \"%s\";", filename);
 
+    char select_statement[] = "SELECT Files.file_path, Files.zone_id, Zones.zone_name, Zones.zone_type FROM Files INNER JOIN Zones ON Zones.zone_id = Files.zone_id WHERE file_name = ?;";
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_finalize(stmt);
@@ -63,10 +65,16 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
         return -2;
     }
 
-    if(sqlite3_step(stmt) != SQLITE_ROW) {
+    if(sqlite3_bind_text(stmt, 1, filename, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -3;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -4;
     }
 
     const char *file_path = sqlite3_column_text(stmt, 0);
@@ -100,7 +108,10 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
  * 
  * @param user_id pointer to int where id of user with given credential is stored
  * 
- * @return 0 if authentication correct, -1 if no database found, -2 if error occured during select execution, -3 if no user with given login found, -4 if password incorrect, -5 if execution failed.
+ * @return 0 if authentication correct, 
+ * -1 if no database found, -2 if prepare failed, 
+ * -3 if bind failed, -4 if no user found, 
+ * -5 if execution failed, -6 if password incorrect.
  */
 int authenticate(char* login, char* password, int* user_id) {
     sqlite3 *db;
@@ -111,10 +122,10 @@ int authenticate(char* login, char* password, int* user_id) {
 
     sqlite3_stmt *stmt; //statement sqlite3
 
-    char select_statement[100];
+    //char select_statement[100];
 
-    snprintf(select_statement, 100, "SELECT user_id, password FROM Users WHERE username = \"%s\";", login);
-
+    //snprintf(select_statement, 100, "SELECT user_id, password FROM Users WHERE username = \"%s\";", login);
+    char select_statement[] = "SELECT user_id, password FROM Users WHERE username = ?;";
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_finalize(stmt);
@@ -122,11 +133,18 @@ int authenticate(char* login, char* password, int* user_id) {
         return -2;
     }
 
+    if(sqlite3_bind_text(stmt, 1, login, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -3;
+    }
+
+
     int sqlite_step = sqlite3_step(stmt);
     if(sqlite_step == SQLITE_DONE) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        return -3;
+        return -4;
     }
     else if(sqlite_step != SQLITE_ROW) {
         sqlite3_finalize(stmt);
@@ -141,7 +159,7 @@ int authenticate(char* login, char* password, int* user_id) {
     if(strcasecmp(password, selected_password) != 0) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        return -4;
+        return -6;
     }
     
     //po zalogowaniu zapamiętujemy user_id
@@ -165,7 +183,8 @@ int authenticate(char* login, char* password, int* user_id) {
  * 
  * @param expiry int representing time when token expires
  * 
- * @return 0 if execution successful, -1 if database could not be opened, -2 if query execution unsuccessful
+ * @return 0 if execution successful, -1 if database could not be opened, -2 if prepare failed,
+ * -3 if bind failed, -4 if execution failed.
  */
 int save_session_id(char* session_id, int user_id, time_t expiry) {
     sqlite3* db;
@@ -175,18 +194,37 @@ int save_session_id(char* session_id, int user_id, time_t expiry) {
     }
 
 
-    char insert_statement[200];
+    //char insert_statement[200];
+    //snprintf(insert_statement, 200, "INSERT INTO Sessions (session_id, user_id, expiry) VALUES(\"%s\", \"%d\", %ld);", session_id, user_id, expiry);
 
+    char insert_statement[] = "INSERT INTO Sessions (session_id, user_id, expiry) VALUES(?, ?, ?);";
 
-    snprintf(insert_statement, 200, "INSERT INTO Sessions (session_id, user_id, expiry) VALUES(\"%s\", \"%d\", %ld);", session_id, user_id, expiry);
+    sqlite3_stmt* stmt;
 
-
-    if(sqlite3_exec(db, insert_statement, NULL, NULL, NULL) != 0) {
-
-        sqlite3_close(db);
+    if(sqlite3_prepare_v2(db, insert_statement, -1, &stmt, NULL) != SQLITE_OK) {
         return -2;
     }
 
+
+    //if(sqlite3_exec(db, insert_statement, NULL, NULL, NULL) != 0) {
+    //
+    //    sqlite3_close(db);
+    //    return -2;
+    //}
+
+    if(sqlite3_bind_text(stmt, 1, session_id, -1, SQLITE_TRANSIENT) != SQLITE_OK || sqlite3_bind_int(stmt, 2, user_id) != SQLITE_OK || sqlite3_bind_int64(stmt, 3, (sqlite3_int64)expiry) != SQLITE_OK ) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -3;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -4;
+    }
+
+    sqlite3_finalize(stmt);
     sqlite3_close(db);
     return 0;
 }
@@ -200,7 +238,9 @@ int save_session_id(char* session_id, int user_id, time_t expiry) {
  * 
  * @param client_info client info struct for retrieving username and his permissions
  * 
- * @return 0 if authorization successful, -1 if database could not be opened, -2 if select query execution failed, -3 if givent session_id not found, -4 if token expired.
+ * @return 0 if authorization successful, -1 if database could not be opened,
+ * -2 if select query execution failed, -3 if bind failed.
+ * -4 if givent session_id not found, -5 if token expired.
  * 
  */
 int authorize(char* session_id, struct client_info_struct* client_info) {
@@ -211,19 +251,27 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
 
     sqlite3_stmt* stmt;
 
-    char select_statement[250];
+    //char select_statement[250];
 
-    snprintf(select_statement, 250, "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=\"%s\";", session_id);
+    //snprintf(select_statement, 250, "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=\"%s\";", session_id);
+
+    char select_statement[] = "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=?;";
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_close(db);
         return -2;
     }
 
-    if(sqlite3_step(stmt) != SQLITE_ROW) {
+    if(sqlite3_bind_text(stmt, 1, session_id, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -3;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -4;
     }
 
     //sprawdzanie czy token nie jest expired
@@ -232,7 +280,7 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
     if(time(NULL) > expiry) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        return -4;
+        return -5;
     }
 
 
@@ -259,7 +307,8 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
  * @param client_info pointer to client_info_struct where user info from db will be stored
  * 
  * @return 0 if execution successful, -1 if db could not be opened, -2 if select query execution failed,
- *  -3 if session_id not found in db, -4 if token is expired.
+ * -3 if bind failed, -4 if session_id not found in db, -5 if token is expired.
+ * Function returns 1 if user authorized successfuly, but no NAS login info was found.
  */
 int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
     sqlite3* db;
@@ -269,18 +318,24 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
 
     sqlite3_stmt* stmt;
 
-    char select_statement[350];
-    snprintf(select_statement, 350, "SELECT Users.username, Users.elevated, Sessions.expiry, NAS_Users.NAS_username, NAS_Users.NAS_password FROM Users INNER JOIN Sessions ON Users.user_id = Sessions.user_id INNER JOIN NAS_Users ON Users.user_id = NAS_Users.user_id WHERE session_id=\"%s\";", session_id);
+    char select_statement[] = "SELECT Users.username, Users.elevated, Sessions.expiry, NAS_Users.NAS_username, NAS_Users.NAS_password FROM Users INNER JOIN Sessions ON Users.user_id = Sessions.user_id LEFT JOIN NAS_Users ON Users.user_id = NAS_Users.user_id WHERE session_id=?";
+    
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
         sqlite3_close(db);
         return -2;
     }
 
-    if(sqlite3_step(stmt) != SQLITE_ROW) {
+    if(sqlite3_bind_text(stmt, 1, session_id, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -3;
+    }
+
+    if(sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -4;
     }
 
     //sprawdzanie czy token nie jest expired
@@ -288,8 +343,11 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
     if(time(NULL) > expiry) {
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        return -4;
+        return -5;
     }   
+
+
+
 
     //zapisanie info o uzytkowniku
     const char* name = sqlite3_column_text(stmt, 0);
@@ -298,10 +356,23 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
     //zapisane info o credentialach NAS
     const char* NAS_username = sqlite3_column_text(stmt, 3);
     const char* NAS_password = sqlite3_column_text(stmt, 4);
-    strcpy(client_info->NAS_username, (char*)NAS_username);
-    strcpy(client_info->NAS_password, (char*)NAS_password);
+
+
+    
 
     client_info->elevated = sqlite3_column_int(stmt, 1);
+
+    //po zapisaniu info o użytkowniku, bo to zawsze chcemy, sprawdzamy czy istnieje NAS
+
+    if(NAS_password == NULL || NAS_username == NULL) {
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return 1;
+    }
+
+
+    strcpy(client_info->NAS_username, (char*)NAS_username);
+    strcpy(client_info->NAS_password, (char*)NAS_password);
 
     sqlite3_finalize(stmt);
     sqlite3_close(db);

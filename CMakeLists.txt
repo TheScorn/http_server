@@ -26,6 +26,10 @@ set_target_properties(http_login PROPERTIES PUBLIC_HEADER http_server_header)
 add_library(http_get http_get.c)
 set_target_properties(http_get PROPERTIES PUBLIC_HEADER http_server_header)
 
+#lib with function http_NAS
+add_library(http_NAS http_NAS.c)
+set_target_properties(http_NAS PROPERTIES PUBLIC_HEADER http_server_header)
+
 
 
 #lib with basic http protocol functionalities
@@ -71,7 +75,7 @@ set_target_properties(base64 PROPERTIES PUBLIC_HEADER http_server_header)
 
 target_include_directories(http_server.out PUBLIC ${PROJECT_BINARY_DIR})
 
-target_link_libraries(http_server.out PUBLIC http_handler http_get http_logout http_login http_functions argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP NAS_API)
+target_link_libraries(http_server.out PUBLIC http_handler http_get http_logout http_login http_NAS http_functions argument_handler http_build_response helper_functions db_interface base64 sqlite PPHP NAS_API)
 
 option(ENABLE_DEBUG "Enable DEBUG mode" OFF)
 

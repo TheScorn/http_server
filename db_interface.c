@@ -318,7 +318,8 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
 
     sqlite3_stmt* stmt;
 
-    char select_statement[] = "SELECT Users.username, Users.elevated, Sessions.expiry, NAS_Users.NAS_username, NAS_Users.NAS_password FROM Users INNER JOIN Sessions ON Users.user_id = Sessions.user_id LEFT JOIN NAS_Users ON Users.user_id = NAS_Users.user_id WHERE session_id=?";
+
+    char select_statement[] = "SELECT Users.username, Users.elevated, Sessions.expiry, NAS_Users.NAS_username, NAS_Users.NAS_password FROM Users INNER JOIN Sessions ON Users.user_id = Sessions.user_id LEFT JOIN NAS_Users ON Users.user_id = NAS_Users.user_id WHERE session_id=?;";
     
 
     if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
@@ -333,6 +334,7 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
     }
 
     if(sqlite3_step(stmt) != SQLITE_ROW) {
+        printf("TEST, ROW error.\n");
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -4;
@@ -341,6 +343,7 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
     //sprawdzanie czy token nie jest expired
     int expiry = sqlite3_column_int(stmt, 2);
     if(time(NULL) > expiry) {
+        printf("TEST, expired entered.\n");
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return -5;

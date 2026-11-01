@@ -185,16 +185,36 @@ int send_http_found_main(int client_fd, bool clear_cookie) {
  * 
  * @return 0 if execution was successful, -1 if error occured while sending.
  */
-int send_http_bad_request(int client_fd) {
+int send_http_400_Bad_Request(int client_fd, char* error) {
     char date[50];
-    http_current_time(date);
+    size_t error_len = 0;
+    
+    if(error != NULL) {
+        error_len = strlen(error);
+    }
 
-    char response[250];
-    snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
+    char response[250 + error_len]; 
+
+    http_current_time(date);
+    
+
+    if(error != NULL) {
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Type: text/plain\r\n"
+                                            "Content-Length: %zu\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "%s", date, error_len, error);
+    }
+    else {
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
                                             "Date: %s\r\n"
                                             "Content-Length: 0\r\n"
                                             "Connection: close\r\n"
                                             "\r\n", date);
+    }
+    
 
     if(send_routine(client_fd, response) != 0) {
         return -1;
@@ -287,6 +307,94 @@ int send_http_ok_set_cookie(int client_fd, char* session_id, int session_id_life
     return 0;
 }
 
+/**
+ * @brief Send 200 OK
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param message pointer to null terminated string that describes message that came with 200 response.
+ * If message is a NULL-pointer the 200 message will have no body.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_200_OK(int client_fd, char* message) {
+    char date[50];
+    size_t message_len = 0;
+
+    if(message != NULL) {
+        message_len = strlen(message);
+    }
+
+    char response[250 + message_len];
+    http_current_time(date);
+    
+    if(message != NULL) {
+        snprintf(response, sizeof(char) * (250 + message_len),
+            "HTTP/1.1 200 OK\r\n"
+            "Date: %s\r\n"
+            "Content-Type: application/json\r\n"
+            "Content-Length: %zu\r\n\r\n"
+            "%s", date, message_len, message);
+
+    }
+    else {
+        snprintf(response, sizeof(char) * (250),
+            "HTTP/1.1 200 OK\r\n"
+            "Date: %s\r\n"
+            "Content-Length: 0\r\n\r\n" , date, message_len, message);
+    }
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Send 201 Created
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param message pointer to null terminated string that describes message that came with 201 response.
+ * If message is a NULL-pointer the 201 message will have no body.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_201_Created(int client_fd, char* message) {
+    char date[50];
+    size_t message_len = 0;
+
+    if(message != NULL) {
+        message_len = strlen(message);
+    }
+
+    char response[250 + message_len];
+    http_current_time(date);
+    
+    if(message != NULL) {
+        snprintf(response, sizeof(char) * (250 + message_len),
+            "HTTP/1.1 201 Created\r\n"
+            "Date: %s\r\n"
+            "Content-Type: application/json\r\n"
+            "Content-Length: %zu\r\n\r\n"
+            "%s", date, message_len, message);
+
+    }
+    else {
+        snprintf(response, sizeof(char) * (250),
+            "HTTP/1.1 201 Created\r\n"
+            "Date: %s\r\n"
+            "Content-Length: 0\r\n\r\n" , date, message_len, message);
+    }
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
 
 /**
  * @brief Send 414 Uri Too Long
@@ -367,5 +475,80 @@ int send_http_Forbidden(int client_fd, char* error) {
         return -1;
     }
 
+    return 0;
+}
+
+/**
+ * @brief Send 503 Service Unavailable
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param error pointer to null terminated string that describes error that caused 503 response.
+ * If error is a NULL-pointer the 503 message will have no body.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_503_Service_Unavailable(int client_fd, char* error) {
+    char date[50];
+    size_t error_len = 0;
+
+    if(error != NULL) {
+        error_len = strlen(error);
+    }
+
+    char response[250 + error_len];
+    http_current_time(date);
+
+    if(error != NULL) {
+        snprintf(response, sizeof(char) * (250 + error_len),
+                "HTTP/1.1 503 Service Unavailable\r\n"
+                "Date: %s\r\n"
+                "Content-Type: text/plain\r\n"
+                "Content-Length: %zu\r\n"
+                "Connection: close\r\n"
+                "\r\n"
+                "%s", date, error_len, error);
+    }
+    else {
+        snprintf(response, sizeof(char) * (250),
+                "HTTP/1.1 503 Service Unavailable\r\n"
+                "Date: %s\r\n"
+                "Content-Length: 0\r\n"
+                "Connection: close\r\n"
+                "\r\n", date);
+    }
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+    return 0;
+
+}
+
+/**
+ * @brief Send 502 Bad Gateway.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_502_Bad_Gateway(int client_fd) {
+    char date[50];
+    char response[300];
+
+    
+
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * 200, "HTTP/1.1 502 Bad Gateway\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Type: text/plain\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "\r\n", date);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
     return 0;
 }

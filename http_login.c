@@ -33,7 +33,7 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
 
     if(regexec(&regex, buffer, 4, matches, 0) != 0) {
         fprintf(stderr, "No login info found in message.\n");
-        if(send_http_bad_request(client_fd) != 0) {
+        if(send_http_400_Bad_Request(client_fd, NULL) != 0) {
             return -1;
         }
         

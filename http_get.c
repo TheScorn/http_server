@@ -47,15 +47,19 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
         return 1;
     }
 
-
     char page_name[page_name_len + 1];
     snprintf(page_name, sizeof(char) * (page_name_len + 1), "%s", buffer + (matches + 1)->rm_so);
 
     char* file_name = url_decode(page_name);
-
     char file_ext[32];
 
-    strcpy(file_ext, get_file_extension(file_name));
+    const char* file_ext_ptr = get_file_extension(file_name);
+    if(file_ext_ptr == NULL) {
+        file_ext[0] = '\0';
+    }
+    else {
+        snprintf(file_ext, sizeof(char) * 32, "%s", file_ext_ptr);
+    }
 
 
     struct file_info_struct file_info;
@@ -89,6 +93,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
         }
         return 2;
     }
+
 
     regex_t regex;
 

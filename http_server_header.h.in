@@ -82,11 +82,15 @@ int http_current_time(char* date);
 
 int send_http_found_login(int client_fd, bool clear_cookie);
 
+int send_http_200_OK(int client_fd, char* message);
+
+int send_http_201_Created(int client_fd, char* message);
+
 int send_http_found_main(int client_fd, bool clear_cookie);
 
 int send_http_internal_server_error(int client_fd, char* error);
 
-int send_http_bad_request(int client_fd);
+int send_http_400_Bad_Request(int client_fd, char* error);
 
 int send_http_unauthorized(int client_fd);
 
@@ -97,6 +101,11 @@ int send_http_URI_too_long(int client_fd, int uri_max_len);
 int send_http_not_found(int client_fd);
 
 int send_http_Forbidden(int client_fd, char* error);
+
+int send_http_502_Bad_Gateway(int client_fd);
+
+int send_http_503_Service_Unavailable(int client_fd, char* error);
+
 /////////////////////////////////////////////////
 //http request handlers
 
@@ -106,6 +115,7 @@ int http_logout_routine(int client_fd, char* buffer);
 
 int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan);
 
+int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add);
 /////////////////////////////////////////////////
 
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);

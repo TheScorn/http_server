@@ -17,10 +17,14 @@
  * @param file pointer to char pointer used to store loaded file.
  * After successful execution memory will be dynamically allocated and needs to be manually freed.
  * 
- * @return 0 if execution successful, -1 if file could not be opened.
+ * @return 0 if execution successful, -1 if file could not be opened or file_path was NULL.
  */
 int load_file(char* file_path, char** file) {
     
+    if(file_path == NULL) {
+        return -1;
+    }
+
     int file_fd = open(file_path, O_RDONLY);
     if(file_fd == -1) {
         return -1;
@@ -53,6 +57,10 @@ int load_file(char* file_path, char** file) {
  * @return 0
  */
 int add_response_header(char* raw, const char* file_ext, char** processed) {
+
+    if(raw == NULL) {
+        raw = "";
+    }
 
     const char* mime_type = get_mime_type(file_ext);
 

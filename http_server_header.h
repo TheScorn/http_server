@@ -56,21 +56,11 @@ enum connection_type_en {
 
 void *handle_client(void *arg);
 
-const char *get_file_extension(const char *filename);
-
-const char *get_mime_type(const char *file_ext);
-
 bool case_insensitive_compare(const char *word1, const char *word2);
 
 char *get_file_case_insensitive(const char *file_name);
 
-char *url_decode(const char *src);
-
 int build_http_response(const char *file_path, const char *file_ext, char **response);
-
-int load_file(char* file_path, char** file);
-
-int add_response_header(char* raw, const char* file_ext, char** processed);
 
 
 ////////////////////////////////////////////////
@@ -124,15 +114,12 @@ int get_file_info(char *filename, struct file_info_struct* page_info);
 
 int get_client_info(char* name, char* password, struct client_info_struct* client_info);
 
-unsigned char * base64_decode(const unsigned char *src, size_t len, size_t *out_len);
-
-char * get_username(char * authorization);
-
-char * get_password(char * authorization);
-
 int test_con();
 
 int test_NAS_connection(struct sockaddr_in* NAS_add);
+
+//////////////////////////////////////////////////////////////////////////
+//Functions included in Tests are inside this bracket
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,9 +127,27 @@ extern "C" {
 
 void generate_session_id(int length, char* token);
 
+const char *get_file_extension(const char *filename);
+
+char * get_username(char * authorization);
+
+char * get_password(char * authorization);
+
+char *url_decode(const char *src);
+
+unsigned char * base64_decode(const unsigned char *src, size_t len, size_t *out_len);
+
+const char *get_mime_type(const char *file_ext);
+
+int load_file(char* file_path, char** file);
+
+int add_response_header(char* raw, const char* file_ext, char** processed);
+
 #ifdef __cplusplus
 }
 #endif
+
+////////////////////////////////////////////////////////////////////////
 
 
 int authenticate(char* login, char* password, int* user_id);

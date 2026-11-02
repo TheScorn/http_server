@@ -28,7 +28,7 @@ const char *get_file_extension(const char *filename) {
 
     const char *dot = strrchr(filename, '.');
 
-    if(!dot || dot == filename) {
+    if(!dot || dot == filename || *(dot + 1) == '\0') {
         return NULL;
     }
 
@@ -48,6 +48,9 @@ const char *get_file_extension(const char *filename) {
  * 
  */
 const char *get_mime_type(const char *file_ext) {
+    if(file_ext == NULL) {
+        return "application/octet-stream";
+    }
     if(strcasecmp(file_ext, "html") == 0 || strcasecmp(file_ext,"htm") == 0) {
         return "text/html";    
     }
@@ -208,11 +211,21 @@ char* get_file_case_insensitive(const char *file_name) {
  */
 char* get_username(char * authorization) {
 
+    if(authorization == NULL) {
+        return NULL;
+    }
+
     char * pointer_to_colon = strchr(authorization, ':');
+
+    if(pointer_to_colon == NULL) {
+        return NULL;
+    }
 
     int index_of_colon = (int)(pointer_to_colon - authorization);
 
     char * username = (char *)malloc(strlen(authorization) + 1);
+
+    
     strcpy(username, authorization);
     username[index_of_colon] = '\0';
 
@@ -232,7 +245,15 @@ char* get_username(char * authorization) {
  */
 char* get_password(char * authorization) {
 
+    if(authorization == NULL) {
+        return NULL;
+    }
+
     char * pointer_to_colon = strchr(authorization, ':');
+    if(pointer_to_colon == NULL) {
+        return NULL;
+    }
+
 
     return pointer_to_colon + 1;
 
@@ -252,6 +273,11 @@ char* get_password(char * authorization) {
  * 
  */
 char *url_decode(const char *src) {
+
+    if(src == NULL) {
+        return NULL;
+    }
+
     size_t src_len = strlen(src);
     
     char *decoded = (char *)malloc(src_len + 1);
@@ -262,7 +288,7 @@ char *url_decode(const char *src) {
         if(src[i] == '%' && i+2 < src_len) {
             int hex_val;
             sscanf(src + i + 1, "%2x", &hex_val);
-            decoded[decoded_len++] == hex_val;
+            decoded[decoded_len++] = (char)hex_val;
             i += 2;
         }
         else {
@@ -270,7 +296,10 @@ char *url_decode(const char *src) {
         }
     }
 
+   
     decoded[decoded_len] = '\0';
+
+
     return decoded;
 }
 

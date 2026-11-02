@@ -209,9 +209,12 @@ static const unsigned char base64_table[65] =
  *
  * Caller is responsible for freeing the returned buffer.
  */
-unsigned char * base64_decode(const unsigned char *src, size_t len, size_t *out_len)
-{
-	unsigned char dtable[256], *out, *pos, block[4], tmp;
+unsigned char * base64_decode(const unsigned char *src, size_t len, size_t *out_len) {
+	if(src == NULL) {
+        return NULL;
+    }
+    
+    unsigned char dtable[256], *out, *pos, block[4], tmp;
 	size_t i, count, olen;
 	int pad = 0;
 

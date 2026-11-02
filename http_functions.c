@@ -341,7 +341,7 @@ int send_http_200_OK(int client_fd, char* message) {
         snprintf(response, sizeof(char) * (250),
             "HTTP/1.1 200 OK\r\n"
             "Date: %s\r\n"
-            "Content-Length: 0\r\n\r\n" , date, message_len, message);
+            "Content-Length: 0\r\n\r\n" , date);
     }
 
     if(send_routine(client_fd, response) != 0) {
@@ -385,7 +385,7 @@ int send_http_201_Created(int client_fd, char* message) {
         snprintf(response, sizeof(char) * (250),
             "HTTP/1.1 201 Created\r\n"
             "Date: %s\r\n"
-            "Content-Length: 0\r\n\r\n" , date, message_len, message);
+            "Content-Length: 0\r\n\r\n" , date);
     }
 
     if(send_routine(client_fd, response) != 0) {

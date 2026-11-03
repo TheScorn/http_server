@@ -54,9 +54,9 @@ int http_current_time(char* date) {
 
 }
 
-
+/////////////////////////////////////////
 //Informational 1xx
-//////////////////////////////////////////
+/////////////////////////////////////////
 
 
 
@@ -209,7 +209,7 @@ int send_http_302_Found_main(int client_fd, bool clear_cookie) {
         snprintf(response, sizeof(char) * 250, "HTTP/1.1 302 Found\r\n"
                                                 "Location: main_page.html\r\n"
                                                 "Date: %s\r\n"
-                                                "Set-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
+                                                "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
          
     }
     else {
@@ -248,7 +248,7 @@ int send_http_302_Found_login(int client_fd, bool clear_cookie) {
             "HTTP/1.1 302 Found\r\n"
             "Location: /login_page.html\r\n"
             "Date: %s\r\n"
-            "set-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
+            "Set-Cookie: sessionId=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
     }
     else {
         snprintf(response, sizeof(char) * 250,
@@ -426,7 +426,7 @@ int send_http_414_Request_URI_Too_Long(int client_fd, int uri_max_len) {
 
     char body[100];
     char response[300];
-    snprintf(body, sizeof(char) * 100, "URI exeeds the maximum allowed length of %d bytes.\n", uri_max_len);
+    snprintf(body, sizeof(char) * 100, "URI exeeds the maximum allowed length of %d bytes.", uri_max_len);
 
     size_t len = strlen(body);
 

@@ -54,34 +54,34 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
     int authentication_status = authenticate(login, password, &user_id);
     if(authentication_status == -1) {
         fprintf(stderr, "Database could not be opened, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -3;
     }
     else if(authentication_status == -2) {
         fprintf(stderr, "Prepare failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -4;
     }
     else if(authentication_status == -3) {
         fprintf(stderr, "Bind failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -5;
     }
     else if(authentication_status == -5) {
         fprintf(stderr, "Execution failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -6;
     }
     else if(authentication_status == -4 || authentication_status == -6) {
-        if(send_http_unauthorized(client_fd) != 0) {
+        if(send_http_401_Unauthorized(client_fd) != 0) {
             return -1;
         }
         return 1;
@@ -101,34 +101,34 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
     int save_token_status = save_session_id(session_id, user_id, expiry);
     if(save_token_status == -1) {
         fprintf(stderr, "Database could not be opened, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -7;
     }
     else if(save_token_status == -2) {
         fprintf(stderr, "Prepare failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -8;
     }
     else if(save_token_status == -3) {
         fprintf(stderr, "Bind failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -9;
     }
     else if(save_token_status == -4) {
         fprintf(stderr, "Execution failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -10;
     }
 
-    if(send_http_ok_set_cookie(client_fd, session_id, session_id_lifespan) != 0) {
+    if(send_http_200_OK_set_cookie(client_fd, session_id, session_id_lifespan) != 0) {
         return -1;
     }
 

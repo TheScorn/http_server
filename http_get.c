@@ -41,7 +41,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
     //catch potential error if user inputs very long page name
     //assuming that no page should have names beyond 4096 characters
     if(page_name_len > uri_max_len) {
-        if(send_http_URI_too_long(client_fd, uri_max_len) != 0) {
+        if(send_http_414_Request_URI_Too_Long(client_fd, uri_max_len) != 0) {
             return -1;
         }
         return 1;
@@ -68,27 +68,27 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
 
     if(status == -1) {
         fprintf(stderr, "Files table in database could not be opened, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -2;
     }
     else if(status == -2) {
         fprintf(stderr, "Prepare failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -3;
     }
     else if(status == -3) {
         fprintf(stderr, "Bind failed, sending 500.\n");
-        if(send_http_internal_server_error(client_fd, NULL) != 0) {
+        if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
             return -1;
         }
         return -3;
     }
     else if(status == -4) {
-        if(send_http_not_found(client_fd) != 0) {
+        if(send_http_404_Not_Found(client_fd) != 0) {
             return -1;
         }
         return 2;
@@ -109,7 +109,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
         //Check If page requires login
         if(file_info.zone_type != 0) {
             //No Cookie and Login required
-            if(send_http_found_login(client_fd, false) != 0) {
+            if(send_http_302_Found_login(client_fd, false) != 0) {
                 return -1;
             }
             return 0;
@@ -122,7 +122,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
             status = load_file(file_info.file_path, &file);
             if(status == -1) {
                 fprintf(stderr, "File stated in Database but could not be opened, sending 500.\n");
-                if(send_http_internal_server_error(client_fd, NULL) != 0) {
+                if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                     return -1;
                 }
                 return -4;
@@ -184,21 +184,21 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
         status = authorize(session_id, &client_info);
         if(status == -1) {
             fprintf(stderr, "Users table in database could not be opened, sending 500.\n");
-            if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                 return -1;
             }
             return -2;
         }
         else if(status == -2) {
             fprintf(stderr, "SELECT query on Sessions unsuccessful, sending 500.\n");
-            if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                 return -1;
             }
             return -3;
         }
         else if(status == -3) {
             fprintf(stderr, "Bind failed, sending 500.\n");
-            if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                 return -1;
             }
             return -3;
@@ -207,7 +207,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
             //if token exists but its incorrect and the zone requires login
             //remove token -> tell user to login again
 
-            if(send_http_found_login(client_fd, true) != 0) {
+            if(send_http_302_Found_login(client_fd, true) != 0) {
                 return -1;
             }
             return 3;
@@ -218,7 +218,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
             status = load_file(file_info.file_path, &file);
             if(status == -1) {
                 fprintf(stderr, "File stated in Database but could not be opened, sending 500.\n");
-                if(send_http_internal_server_error(client_fd, NULL) != 0) {
+                if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                     return -1;
                 }
                 return -4;
@@ -276,7 +276,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
             status = load_file(file_info.file_path, &file);
             if(status == -1) {
                 fprintf(stderr, "File stated in Database but could not be opened, sending 500.\n");
-                if(send_http_internal_server_error(client_fd, NULL) != 0) {
+                if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                     return -1;
                 }
                 return -4;
@@ -328,7 +328,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
 
         }
         else if(file_info.zone_type == 1 && !client_info.elevated) {
-            if(send_http_Forbidden(client_fd, "Insufficient access rights!") != 0) {
+            if(send_http_403_Forbidden(client_fd, "Insufficient access rights!") != 0) {
                 return -1;
             }
             return 4;

@@ -29,14 +29,14 @@ int http_logout_routine(int client_fd, char* buffer) {
         int drop_session_status = drop_session(session_id);
         if(drop_session_status == -1) {
             fprintf(stderr, "Database could not be opened, sending 500.\n");
-            if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                 return -1;
             }
             return -2;
         }
         else if(drop_session_status == -2) {
             fprintf(stderr, "DROP Query execution unsuccessful, sending 500.\n");
-            if(send_http_internal_server_error(client_fd, NULL) != 0) {
+            if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                 return -1;
             }
             return -3;
@@ -46,7 +46,7 @@ int http_logout_routine(int client_fd, char* buffer) {
         }
     }
 
-    if(send_http_found_main(client_fd, true) != 0) {
+    if(send_http_302_Found_main(client_fd, true) != 0) {
         return -1;
     }
 

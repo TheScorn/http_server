@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+//simple often used functions
+
 /**
  * @brief Sending routine
  * 
@@ -33,7 +35,6 @@ int send_routine(int client_fd, char* message) {
     return 0;
 }
 
-
 /**
  * @brief HTTP Date
  * 
@@ -54,258 +55,14 @@ int http_current_time(char* date) {
 }
 
 
-/**
- * @brief Send Internal Server Error message.
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @param error pointer to null-terminated error message. If this is a NULL-pointer, the response has no content body.
- * 
- * @return 0 if execution was successful, -1 if error occured while sending.
- */
-int send_http_internal_server_error(int client_fd, char* error) {
-    char date[50];
-    http_current_time(date);
-
-    if(error != NULL) {
-        size_t error_len = strlen(error);
-
-        char response[300 + error_len];
-
-        snprintf(response, sizeof(char) * (300 + error_len), "HTTP/1.1 500 Internal Server Error\r\n"
-                                                            "Date: %s\r\n"
-                                                            "Content-Type: text/plain; charset=utf-8\r\n"
-                                                            "Content-Length: %zu\r\n"
-                                                            "Connection: close\r\n"
-                                                            "\r\n"
-                                                            "%s", date, error_len, error);
-
-        if(send_routine(client_fd, response) != 0) {
-            return -1;
-        }
-
-    }   
-    else {
-        char response[250];
-
-        snprintf(response, sizeof(char) * 250, "HTTP/1.1 500 Internal Server Error\r\n"
-                                            "Date: %s\r\n"
-                                            "Content-Length: 0\r\n"
-                                            "Connection: close\r\n\r\n", date);
-
-        
-        if(send_routine(client_fd, response) != 0) {
-            return -1;
-        }
-        return 0;
-    }
-}
+//Informational 1xx
+//////////////////////////////////////////
 
 
 
-/**
- * @brief Redirect to login_page
- * 
- * Function is used when the user is not logged in and requests a resource that requires it.
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @param clear_cookie boolean parameter that tells if clear-cookie header should be sent.
- * 
- * @return 0 if execution was successful, -1 if error occured inside send_routine.
- */
-int send_http_found_login(int client_fd, bool clear_cookie) {
-    char response[250];
-    char date[50];
-    
-    size_t response_len;
-
-    http_current_time(date);
-
-    if(clear_cookie) {
-        snprintf(response, sizeof(char) * 250,
-            "HTTP/1.1 302 Found\r\n"
-            "Location: /login_page.html\r\n"
-            "Date: %s\r\n"
-            "set-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
-    }
-    else {
-        snprintf(response, sizeof(char) * 250,
-            "HTTP/1.1 302 Found\r\n"
-            "Date: %s\r\n"
-            "Location: /login_page.html", date);  
-    }
-    
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    } 
-
-    return 0;
-}
-
-/**
- * @brief Redirect to main (with optional cookie clearing)
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @param clear_cookie boolean parameter that tells if clear-cookie header should be sent.
- * 
- * @return 0 if execution was successful, -1 if error occured inside send_routine.
- */
-int send_http_found_main(int client_fd, bool clear_cookie) {
-    char response[250];
-    char date[50];
-    http_current_time(date);
-
-    size_t response_len;
-
-    if(clear_cookie) {
-        snprintf(response, sizeof(char) * 250, "HTTP/1.1 302 Found\r\n"
-                                                "Location: main_page.html\r\n"
-                                                "Date: %s\r\n"
-                                                "Set-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
-         
-    }
-    else {
-        snprintf(response, sizeof(char) * 250, "HTTP/1.1 302 Found\r\n"
-                                                "Date: %s\r\n"
-                                                "Location: main_page.html", date);
-    }
-
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    }
-    return 0;
-}
-
-/**
- * @brief Send Bad Request.
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @return 0 if execution was successful, -1 if error occured while sending.
- */
-int send_http_400_Bad_Request(int client_fd, char* error) {
-    char date[50];
-    size_t error_len = 0;
-    
-    if(error != NULL) {
-        error_len = strlen(error);
-    }
-
-    char response[250 + error_len]; 
-
-    http_current_time(date);
-    
-
-    if(error != NULL) {
-        snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
-                                            "Date: %s\r\n"
-                                            "Content-Type: text/plain\r\n"
-                                            "Content-Length: %zu\r\n"
-                                            "Connection: close\r\n"
-                                            "\r\n"
-                                            "%s", date, error_len, error);
-    }
-    else {
-        snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
-                                            "Date: %s\r\n"
-                                            "Content-Length: 0\r\n"
-                                            "Connection: close\r\n"
-                                            "\r\n", date);
-    }
-    
-
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-/**
- * @brief Send 401 Unauthorized.
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @return 0 if execution was successful, -1 if error occured while sending.
- */
-int send_http_unauthorized(int client_fd) {
-    char date[50];
-    char response[250];
-    http_current_time(date);
-
-    snprintf(response, sizeof(char) * 250, "HTTP/1.1 401 Unauthorized\r\n"
-                                            "Date: %s\r\n"
-                                            "Content-Length: 0\r\n"
-                                            "Connection: close\r\n\r\n", date);
-
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    }
-    return 0;
-}
-
-/**
- * @brief Send 404 Not Found.
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @return 0 if execution was successful, -1 if error occured while sending.
- */
-int send_http_not_found(int client_fd) {
-    char date[50];
-    char response[300];
-
-    
-
-    http_current_time(date);
-
-    snprintf(response, sizeof(char) * 200, "HTTP/1.1 404 Not Found\r\n"
-                                            "Date: %s\r\n"
-                                            "Content-Type: text/plain\r\n"
-                                            "Content-Length: 13\r\n"
-                                            "\r\n"
-                                            "404 Not Found", date);
-
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    }
-    return 0;
-}
-
-
-/**
- * @brief Send 200 OK and set Cookie
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @param session_id pointer to null-terminated string with session id stored.
- * 
- * @param session_id_lifespan int describing how long a token is viable in minutes.
- * 
- * @return 0 if execution was successful, -1 if error occured while sending.
- */
-int send_http_ok_set_cookie(int client_fd, char* session_id, int session_id_lifespan) {
-    int session_id_len = strlen(session_id);
-    
-    char date[50];
-    char response[300 + session_id_len];
-
-    http_current_time(date);
-
-    snprintf(response, sizeof(char) * (300 + session_id_len), "HTTP/1.1 200 OK\r\n"
-                                                                "Content-Type: application/json;charset=UTF-8\r\n"
-                                                                "Date: %s\r\n"
-                                                                "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d"
-                                                                , date, session_id, session_id_lifespan * 60);
-
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
+/////////////////////////////////////////
+//Successful 2xx
+/////////////////////////////////////////
 
 /**
  * @brief Send 200 OK
@@ -343,6 +100,38 @@ int send_http_200_OK(int client_fd, char* message) {
             "Date: %s\r\n"
             "Content-Length: 0\r\n\r\n" , date);
     }
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Send 200 OK and set Cookie
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param session_id pointer to null-terminated string with session id stored.
+ * 
+ * @param session_id_lifespan int describing how long a token is viable in minutes.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_200_OK_set_cookie(int client_fd, char* session_id, int session_id_lifespan) {
+    int session_id_len = strlen(session_id);
+    
+    char date[50];
+    char response[300 + session_id_len];
+
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * (300 + session_id_len), "HTTP/1.1 200 OK\r\n"
+                                                                "Content-Type: application/json;charset=UTF-8\r\n"
+                                                                "Date: %s\r\n"
+                                                                "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d"
+                                                                , date, session_id, session_id_lifespan * 60);
 
     if(send_routine(client_fd, response) != 0) {
         return -1;
@@ -396,33 +185,128 @@ int send_http_201_Created(int client_fd, char* message) {
 }
 
 
+/////////////////////////////////////////
+//Redirection 3xx
+/////////////////////////////////////////
+
 /**
- * @brief Send 414 Uri Too Long
+ * @brief Redirect to main (with optional cookie clearing)
  * 
  * @param client_fd socket descriptor - connection should be established before using this function.
  * 
- * @param uri_max_len int describing max length of URI that the server will accept.
+ * @param clear_cookie boolean parameter that tells if clear-cookie header should be sent.
  * 
- * @return 0 if execution was successful, -1 if error occured while sending.
+ * @return 0 if execution was successful, -1 if error occured inside send_routine.
  */
-int send_http_URI_too_long(int client_fd, int uri_max_len) {
+int send_http_302_Found_main(int client_fd, bool clear_cookie) {
+    char response[250];
     char date[50];
+    http_current_time(date);
 
-    char body[100];
-    char response[300];
-    snprintf(body, sizeof(char) * 100, "URI exeeds the maximum allowed length of %d bytes.\n", uri_max_len);
+    size_t response_len;
 
-    size_t len = strlen(body);
+    if(clear_cookie) {
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 302 Found\r\n"
+                                                "Location: main_page.html\r\n"
+                                                "Date: %s\r\n"
+                                                "Set-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
+         
+    }
+    else {
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 302 Found\r\n"
+                                                "Date: %s\r\n"
+                                                "Location: main_page.html", date);
+    }
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ * @brief Redirect to login_page
+ * 
+ * Function is used when the user is not logged in and requests a resource that requires it.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param clear_cookie boolean parameter that tells if clear-cookie header should be sent.
+ * 
+ * @return 0 if execution was successful, -1 if error occured inside send_routine.
+ */
+int send_http_302_Found_login(int client_fd, bool clear_cookie) {
+    char response[250];
+    char date[50];
+    
+    size_t response_len;
 
     http_current_time(date);
 
-    snprintf(response, sizeof(char) * 300, "HTTP/1.1 414 URI Too Long\r\n"
+    if(clear_cookie) {
+        snprintf(response, sizeof(char) * 250,
+            "HTTP/1.1 302 Found\r\n"
+            "Location: /login_page.html\r\n"
+            "Date: %s\r\n"
+            "set-Cookie: session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax\r\n", date);
+    }
+    else {
+        snprintf(response, sizeof(char) * 250,
+            "HTTP/1.1 302 Found\r\n"
+            "Date: %s\r\n"
+            "Location: /login_page.html", date);  
+    }
+    
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    } 
+
+    return 0;
+}
+
+
+
+//////////////////////////////////////////
+//Client Error 4xx
+//////////////////////////////////////////
+
+/**
+ * @brief Send Bad Request.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_400_Bad_Request(int client_fd, char* error) {
+    char date[50];
+    size_t error_len = 0;
+    
+    if(error != NULL) {
+        error_len = strlen(error);
+    }
+
+    char response[250 + error_len]; 
+
+    http_current_time(date);
+    
+
+    if(error != NULL) {
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
                                             "Date: %s\r\n"
                                             "Content-Type: text/plain\r\n"
                                             "Content-Length: %zu\r\n"
                                             "Connection: close\r\n"
                                             "\r\n"
-                                            "%s", date, len, body);
+                                            "%s", date, error_len, error);
+    }
+    else {
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 400 Bad Request\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n", date);
+    }
+    
 
     if(send_routine(client_fd, response) != 0) {
         return -1;
@@ -431,6 +315,28 @@ int send_http_URI_too_long(int client_fd, int uri_max_len) {
     return 0;
 }
 
+/**
+ * @brief Send 401 Unauthorized.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_401_Unauthorized(int client_fd) {
+    char date[50];
+    char response[250];
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * 250, "HTTP/1.1 401 Unauthorized\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "Connection: close\r\n\r\n", date);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+    return 0;
+}
 
 /**
  * @brief Send 403 Forbidden
@@ -442,7 +348,7 @@ int send_http_URI_too_long(int client_fd, int uri_max_len) {
  * 
  * @return 0 if execution was successful, -1 if error occured while sending.
  */
-int send_http_Forbidden(int client_fd, char* error) {
+int send_http_403_Forbidden(int client_fd, char* error) {
     char date[50];
     size_t error_len = 0;
     if(error != NULL) {
@@ -475,6 +381,149 @@ int send_http_Forbidden(int client_fd, char* error) {
         return -1;
     }
 
+    return 0;
+}
+
+/**
+ * @brief Send 404 Not Found.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_404_Not_Found(int client_fd) {
+    char date[50];
+    char response[300];
+
+    
+
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * 200, "HTTP/1.1 404 Not Found\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Type: text/plain\r\n"
+                                            "Content-Length: 13\r\n"
+                                            "\r\n"
+                                            "404 Not Found", date);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ * @brief Send 414 Uri Too Long
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param uri_max_len int describing max length of URI that the server will accept.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_414_Request_URI_Too_Long(int client_fd, int uri_max_len) {
+    char date[50];
+
+    char body[100];
+    char response[300];
+    snprintf(body, sizeof(char) * 100, "URI exeeds the maximum allowed length of %d bytes.\n", uri_max_len);
+
+    size_t len = strlen(body);
+
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * 300, "HTTP/1.1 414 URI Too Long\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Type: text/plain\r\n"
+                                            "Content-Length: %zu\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "%s", date, len, body);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+
+///////////////////////////////////////////
+//Server Error 5xx
+///////////////////////////////////////////
+
+/**
+ * @brief Send Internal Server Error message.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @param error pointer to null-terminated error message. If this is a NULL-pointer, the response has no content body.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_500_Internal_Server_Error(int client_fd, char* error) {
+    char date[50];
+    http_current_time(date);
+
+    if(error != NULL) {
+        size_t error_len = strlen(error);
+
+        char response[300 + error_len];
+
+        snprintf(response, sizeof(char) * (300 + error_len), "HTTP/1.1 500 Internal Server Error\r\n"
+                                                            "Date: %s\r\n"
+                                                            "Content-Type: text/plain; charset=utf-8\r\n"
+                                                            "Content-Length: %zu\r\n"
+                                                            "Connection: close\r\n"
+                                                            "\r\n"
+                                                            "%s", date, error_len, error);
+
+        if(send_routine(client_fd, response) != 0) {
+            return -1;
+        }
+
+    }   
+    else {
+        char response[250];
+
+        snprintf(response, sizeof(char) * 250, "HTTP/1.1 500 Internal Server Error\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "Connection: close\r\n\r\n", date);
+
+        
+        if(send_routine(client_fd, response) != 0) {
+            return -1;
+        }
+        return 0;
+    }
+}
+
+/**
+ * @brief Send 502 Bad Gateway.
+ * 
+ * @param client_fd socket descriptor - connection should be established before using this function.
+ * 
+ * @return 0 if execution was successful, -1 if error occured while sending.
+ */
+int send_http_502_Bad_Gateway(int client_fd) {
+    char date[50];
+    char response[300];
+
+    
+
+    http_current_time(date);
+
+    snprintf(response, sizeof(char) * 200, "HTTP/1.1 502 Bad Gateway\r\n"
+                                            "Date: %s\r\n"
+                                            "Content-Type: text/plain\r\n"
+                                            "Content-Length: 0\r\n"
+                                            "\r\n", date);
+
+    if(send_routine(client_fd, response) != 0) {
+        return -1;
+    }
     return 0;
 }
 
@@ -526,29 +575,4 @@ int send_http_503_Service_Unavailable(int client_fd, char* error) {
 
 }
 
-/**
- * @brief Send 502 Bad Gateway.
- * 
- * @param client_fd socket descriptor - connection should be established before using this function.
- * 
- * @return 0 if execution was successful, -1 if error occured while sending.
- */
-int send_http_502_Bad_Gateway(int client_fd) {
-    char date[50];
-    char response[300];
 
-    
-
-    http_current_time(date);
-
-    snprintf(response, sizeof(char) * 200, "HTTP/1.1 502 Bad Gateway\r\n"
-                                            "Date: %s\r\n"
-                                            "Content-Type: text/plain\r\n"
-                                            "Content-Length: 0\r\n"
-                                            "\r\n", date);
-
-    if(send_routine(client_fd, response) != 0) {
-        return -1;
-    }
-    return 0;
-}

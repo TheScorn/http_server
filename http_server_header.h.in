@@ -70,27 +70,27 @@ int send_routine(int client_fd, char* message);
 
 int http_current_time(char* date);
 
-int send_http_found_login(int client_fd, bool clear_cookie);
+int send_http_302_Found_login(int client_fd, bool clear_cookie);
 
 int send_http_200_OK(int client_fd, char* message);
 
 int send_http_201_Created(int client_fd, char* message);
 
-int send_http_found_main(int client_fd, bool clear_cookie);
+int send_http_302_Found_main(int client_fd, bool clear_cookie);
 
-int send_http_internal_server_error(int client_fd, char* error);
+int send_http_500_Internal_Server_Error(int client_fd, char* error);
 
 int send_http_400_Bad_Request(int client_fd, char* error);
 
-int send_http_unauthorized(int client_fd);
+int send_http_401_Unauthorized(int client_fd);
 
-int send_http_ok_set_cookie(int client_fd, char* session_id, int session_id_lifespan);
+int send_http_200_OK_set_cookie(int client_fd, char* session_id, int session_id_lifespan);
 
-int send_http_URI_too_long(int client_fd, int uri_max_len);
+int send_http_414_Request_URI_Too_Long(int client_fd, int uri_max_len);
 
-int send_http_not_found(int client_fd);
+int send_http_404_Not_Found(int client_fd);
 
-int send_http_Forbidden(int client_fd, char* error);
+int send_http_403_Forbidden(int client_fd, char* error);
 
 int send_http_502_Bad_Gateway(int client_fd);
 

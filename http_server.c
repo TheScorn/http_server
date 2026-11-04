@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     }
 
     //db connection test
-    int test_db_con = test_con();
+    int test_db_con = test_con(DB_PATH);
     if(test_db_con == -1) {
         fprintf(stderr, "No SQLite database found\n");
         return -1;
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
 
     close(serverSocket);
     printf("\nSocket closed\n");
-    int drop_all_status = drop_all_sessions();
+    int drop_all_status = drop_all_sessions(DB_PATH);
     if(drop_all_status == -1) {
         fprintf(stderr, "Warning! Database could not be opened - sessions were not dropped.\n");
     }

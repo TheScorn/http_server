@@ -4,7 +4,7 @@
 #include "sqlite3.h"
 #include <time.h>
 #include <stdlib.h>
-#define DB_PATH "/home/thescorn/science/mine/home_server/http_server/Database/http_server.db"
+
 
 /**
  * @brief Function for testing db connection
@@ -14,10 +14,10 @@
  * @return 0 if connection is successful, 
  * 
  */
-int test_con() {
+int test_con(char* db_path) {
     
     sqlite3 *db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -43,10 +43,10 @@ int test_con() {
  * @return 0 if file was found, -1 if no db found, -2 if prepare failed,
  * -3 if bind failed, -4 if no file found.
  */
-int get_file_info(char *filename, struct file_info_struct* file_info) {
+int get_file_info(char* db_path, char *filename, struct file_info_struct* file_info) {
 
     sqlite3 *db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -113,9 +113,9 @@ int get_file_info(char *filename, struct file_info_struct* file_info) {
  * -3 if bind failed, -4 if no user found, 
  * -5 if execution failed, -6 if password incorrect.
  */
-int authenticate(char* login, char* password, int* user_id) {
+int authenticate(char* db_path, char* login, char* password, int* user_id) {
     sqlite3 *db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -186,9 +186,9 @@ int authenticate(char* login, char* password, int* user_id) {
  * @return 0 if execution successful, -1 if database could not be opened, -2 if prepare failed,
  * -3 if bind failed, -4 if execution failed.
  */
-int save_session_id(char* session_id, int user_id, time_t expiry) {
+int save_session_id(char* db_path, char* session_id, int user_id, time_t expiry) {
     sqlite3* db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         //jeśli nie ma bazy danych
         return -1;
     }
@@ -243,9 +243,9 @@ int save_session_id(char* session_id, int user_id, time_t expiry) {
  * -4 if givent session_id not found, -5 if token expired.
  * 
  */
-int authorize(char* session_id, struct client_info_struct* client_info) {
+int authorize(char* db_path, char* session_id, struct client_info_struct* client_info) {
     sqlite3* db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         return -1;
     }
 
@@ -310,7 +310,7 @@ int authorize(char* session_id, struct client_info_struct* client_info) {
  * -3 if bind failed, -4 if session_id not found in db, -5 if token is expired.
  * Function returns 1 if user authorized successfuly, but no NAS login info was found.
  */
-int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
+int authorize_NAS(char* db_path, char* session_id, struct client_info_struct* client_info) {
     sqlite3* db;
     if(sqlite3_open(DB_PATH, &db) != 0) {
         return -1;
@@ -394,9 +394,9 @@ int authorize_NAS(char* session_id, struct client_info_struct* client_info) {
  * @return 0 if execution successful, -1 if database could not be opened, -2 if statement execution unsuccessful.
  * 
  */
-int drop_all_sessions() {
+int drop_all_sessions(char* db_path) {
     sqlite3* db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         return -1;
     }
 
@@ -418,9 +418,9 @@ int drop_all_sessions() {
  * 
  * @return 0 if execution succesful, -1 if database could not be opened, -2 if statement execution unsuccessful, -3 if no row deleted, -4 if more then one row deleted.
  */
-int drop_session(char* sesion_id) {
+int drop_session(char* db_path, char* sesion_id) {
     sqlite3* db;
-    if(sqlite3_open(DB_PATH, &db) != 0) {
+    if(sqlite3_open(db_path, &db) != 0) {
         return -1;
     }
 

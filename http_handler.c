@@ -1,4 +1,4 @@
-#include "http_server_header.h"
+    #include "http_server_header.h"
 #include "PPHP.h"
 #include "NAS_API.h"
 #include <string.h>
@@ -80,7 +80,7 @@ void *handle_client(void *arg) {
         //czy wyciągamy scieżkę przed funkcją czy przekazujemy matches?
 
         //przekazanie matches daje lepszą modularność, można wtedy spróbować zrobić to samo w login, logout
-        http_get_routine(client_fd, buffer, matches, uri_max_len);
+        http_get_routine(client_fd, buffer, matches, uri_max_len, DB_PATH);
         close(client_fd);
         free(buffer);
         return NULL;
@@ -89,7 +89,7 @@ void *handle_client(void *arg) {
     //////////////////////////connection_type LOGIN
     regcomp(&regex, "^POST[[:space:]]+/[[:space:]]+HTTP/1\\.[01]\r?\n(.|\n)*Content-Type:[[:space:]]*multipart/form-data;[[:space:]]*boundary=([^\r\n]+)(.|\n)*name=\"login\"\r?\n\r?\n([^\r\n]+)(.|\n)*name=\"password\"\r?\n\r?\n([^\r\n]+)", REG_EXTENDED | REG_NEWLINE);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        http_login_routine(client_fd, buffer, session_id_length, session_id_lifespan);
+        http_login_routine(client_fd, buffer, session_id_length, session_id_lifespan, DB_PATH);
         close(client_fd);
         free(buffer);
         return NULL;
@@ -100,7 +100,7 @@ void *handle_client(void *arg) {
     //POST bo GET nie powinno zmieniać stanu strony
     regcomp(&regex, "^POST[[:space:]]/logout[[:space:]]HTTP/1.1", REG_EXTENDED);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
-        http_logout_routine(client_fd, buffer);
+        http_logout_routine(client_fd, buffer, DB_PATH);
         close(client_fd);
         free(buffer);
         return NULL;
@@ -109,7 +109,7 @@ void *handle_client(void *arg) {
     regcomp(&regex, "^POST[[:space:]]/NAS/(LIST|GET|PUT|DEL|MKDIR)/([^ ]*)[[:space:]]+HTTP/1.1.*\r\nCookie: sessionId=([^ ]+)*([\r\n|\r|\n]|$)", REG_EXTENDED);
     regmatch_t NAS_matches[4];
     if(regexec(&regex, buffer, 4, NAS_matches, 0) == 0) {
-        http_NAS_routine(client_fd, buffer, NAS_matches, session_id_length, &NAS_add);
+        http_NAS_routine(client_fd, buffer, NAS_matches, session_id_length, &NAS_add, DB_PATH);
         close(client_fd);
         return NULL;
     }
@@ -128,6 +128,9 @@ void *handle_client(void *arg) {
         if(verbose) {
             fprintf(stderr, "Unknown request, no data sent.\n");
         }
+
+        send_http_400_Bad_Request(client_fd, "Unknown request.");
+
         close(client_fd);
         free(buffer);
         return NULL;

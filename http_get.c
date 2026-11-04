@@ -29,7 +29,7 @@
  * 4 if user had insufficient rights to access requested resource
  * 
  */
-int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len) {
+int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len, char* db_path) {
     struct client_info_struct client_info;
     client_info.logged_in = false;
     client_info.elevated = 0;
@@ -63,7 +63,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
 
 
     struct file_info_struct file_info;
-    char status = get_file_info(file_name, &file_info);
+    char status = get_file_info(db_path, file_name, &file_info);
     free(file_name);
 
     if(status == -1) {
@@ -181,7 +181,7 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
         //czy ta linia jest potrzebna??
         session_id[strcspn(session_id, "\r\n")] = '\0';
 
-        status = authorize(session_id, &client_info);
+        status = authorize(db_path, session_id, &client_info);
         if(status == -1) {
             fprintf(stderr, "Users table in database could not be opened, sending 500.\n");
             if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {

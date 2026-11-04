@@ -1,5 +1,4 @@
-#define HTTP_SERVER_VERSION_MAJOR 1
-#define HTTP_SERVER_VERISON_MINOR 10
+
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -11,6 +10,9 @@
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
 
+#define HTTP_SERVER_VERSION_MAJOR 1
+#define HTTP_SERVER_VERISON_MINOR 10
+#define DB_PATH "/home/thescorn/science/mine/home_server/http_server/Database/http_server.db"
 
 struct input_args_struct {
     bool verbose_init;
@@ -67,18 +69,18 @@ int build_http_response(const char *file_path, const char *file_ext, char **resp
 /////////////////////////////////////////////////
 //http request handlers
 
-int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len);
+int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len, char* db_path);
 
-int http_logout_routine(int client_fd, char* buffer);
+int http_logout_routine(int client_fd, char* buffer, char* db_path);
 
-int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan);
+int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan, char* db_path);
 
-int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add);
+int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add, char* db_path);
 /////////////////////////////////////////////////
 
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
-int get_file_info(char *filename, struct file_info_struct* page_info);
+int get_file_info(char* db_path, char *filename, struct file_info_struct* page_info);
 
 int get_client_info(char* name, char* password, struct client_info_struct* client_info);
 
@@ -156,17 +158,17 @@ int send_http_503_Service_Unavailable(int client_fd, char* error);
 ////////////////////////////////////////////////////////////////////////
 
 
-int authenticate(char* login, char* password, int* user_id);
+int authenticate(char* db_path, char* login, char* password, int* user_id);
 
-int save_session_id(char* session_id, int user_id, time_t expiry);
+int save_session_id(char* db_path, char* session_id, int user_id, time_t expiry);
 
-int authorize(char* session_id, struct client_info_struct* client_info);
+int authorize(char* db_path, char* session_id, struct client_info_struct* client_info);
 
-int authorize_NAS(char* session_id, struct client_info_struct* client_info);
+int authorize_NAS(char* db_path, char* session_id, struct client_info_struct* client_info);
 
-int drop_all_sessions();
+int drop_all_sessions(char* db_path);
 
-int drop_session(char* sesion_id);
+int drop_session(char* db_path, char* sesion_id);
 
 int last_occurence(char* str, char chr);
 

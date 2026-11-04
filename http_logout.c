@@ -15,10 +15,10 @@
  * @return 0 if execution successful, -1 for every send error,
  * -2 if database could not be opened, -3 if DROP Query failed.
  */
-int http_logout_routine(int client_fd, char* buffer) {
+int http_logout_routine(int client_fd, char* buffer, char* db_path) {
+    
     regex_t regex;
     regmatch_t matches[2];
-
 
     regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
     if(regexec(&regex, buffer, 2, matches, 0) == 0) {
@@ -26,7 +26,7 @@ int http_logout_routine(int client_fd, char* buffer) {
         char* session_id = buffer + matches[1].rm_so;
         session_id[strcspn(session_id, "\r\n")] = '\0';
 
-        int drop_session_status = drop_session(session_id);
+        int drop_session_status = drop_session(db_path, session_id);
         if(drop_session_status == -1) {
             fprintf(stderr, "Database could not be opened, sending 500.\n");
             if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
@@ -35,14 +35,14 @@ int http_logout_routine(int client_fd, char* buffer) {
             return -2;
         }
         else if(drop_session_status == -2) {
-            fprintf(stderr, "DROP Query execution unsuccessful, sending 500.\n");
+            fprintf(stderr, "DROP Query execution unsuccessful, sending 400.\n");
             if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
                 return -1;
             }
             return -3;
         }
         else if(drop_session_status == -4) {
-            fprintf(stderr, "Warning! Multiple session id's rmoved on one logout message.\n");
+            fprintf(stderr, "Warning! Multiple session id's removed on one logout message.\n");
         }
     }
 

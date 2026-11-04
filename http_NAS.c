@@ -34,7 +34,7 @@
  * 3 if uri for NAS was too long, 4 if unable to connect to NAS,
  * 5 if NAS sent an error
  */
-int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add) {
+int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add, char* db_path) {
     
     //stary sposób ale kopiowanie jest drogie
     char session_id[session_id_length + 1];
@@ -50,7 +50,7 @@ int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int s
     strncpy(client_info.password, "default", 30);
 
 
-    char status = authorize_NAS(session_id, &client_info);
+    char status = authorize_NAS(db_path, session_id, &client_info);
 
     if(status == -1) {
         fprintf(stderr, "Database could not be opened, sending 500.\n");

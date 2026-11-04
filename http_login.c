@@ -22,7 +22,7 @@
  * -8 if prepare failed, -9 if bind failed, -10 if execution of INSERT query failed.
  * 1 if authorization was not passed.
  */
-int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan) {
+int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan, char* db_path) {
     regex_t regex;
     regmatch_t matches[4];
 
@@ -51,7 +51,7 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
     
     int user_id;
 
-    int authentication_status = authenticate(login, password, &user_id);
+    int authentication_status = authenticate(db_path, login, password, &user_id);
     if(authentication_status == -1) {
         fprintf(stderr, "Database could not be opened, sending 500.\n");
         if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {
@@ -98,7 +98,7 @@ int http_login_routine(int client_fd, char* buffer, int session_id_length, int s
     time_t expiry = time(NULL) + (60 * session_id_lifespan);
 
     //token saving
-    int save_token_status = save_session_id(session_id, user_id, expiry);
+    int save_token_status = save_session_id(db_path, session_id, user_id, expiry);
     if(save_token_status == -1) {
         fprintf(stderr, "Database could not be opened, sending 500.\n");
         if(send_http_500_Internal_Server_Error(client_fd, NULL) != 0) {

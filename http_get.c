@@ -97,14 +97,14 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
 
     regex_t regex;
 
-    regcomp(&regex, "\r\nCookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
+    regcomp(&regex, "Cookie: sessionId=([^ ]+)([\r\n|\r|\n]|$)", REG_EXTENDED);
     if(regexec(&regex, buffer, 2, matches, 0) != 0) {
         //There is no Cookie in the request
 
         #ifdef DEBUG
         printf("DEBUG mode: function http_get_routine: no Cookie entered.\n");
         #endif
-
+        
 
         //Check If page requires login
         if(file_info.zone_type != 0) {
@@ -170,13 +170,14 @@ int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_m
     }
     else {
         //Cookie found
-
+        
         #ifdef DEBUG
         printf("DEBUG mode: function http_get_routine: cookie found.\n");
         #endif
 
         buffer[matches[1].rm_eo] = '\0';
         char* session_id = buffer + matches[1].rm_so;
+
 
         //czy ta linia jest potrzebna??
         session_id[strcspn(session_id, "\r\n")] = '\0';

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE 1
 #include "http_server_header.h"
 #include <string.h>
 #include <strings.h>
@@ -5,6 +6,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -13,6 +15,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
+#include <linux/random.h>
 
 /**
  * @brief Function for finding file extensions
@@ -305,7 +308,23 @@ char *url_decode(const char *src) {
 
 
 
-char charset[] = "0123456789abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ-._~+/";
+static const char charset[] = "0123456789abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ-._~+/";
+
+static int fill_random(void* buffer, size_t len) {
+    unsigned char* p = (unsigned char*)buffer;
+    while(len > 0) {
+        ssize_t r = syscall(SYS_getrandom, buffer, len, 1);
+        if(r < 0) {
+            return -1;
+        }
+        p += r;
+        len -= (size_t)r;
+
+    }
+
+    return 0;
+}
+
 
 /**
  * @brief Token generator
@@ -316,19 +335,24 @@ char charset[] = "0123456789abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNOPQRSTUWXYZ-.
  * 
  * @param token address of the token
  */
-void generate_session_id(int length, char* token) {
-    
-    char next_ix;
-    char next;
-    srand(time(0));
-    for(int i = 0; i < length; i++) {
-        
-        next_ix = rand() % (sizeof(charset) - 1);
-        next = charset[next_ix];
-        *(token + i) = next;
+int generate_session_id(int length, char* token) {
+
+    const size_t n = sizeof(charset) - 1;
+    const unsigned int limit = 256 - (256 % n);
+
+    int i = 0;
+    while(i < length) {
+        unsigned char b;
+        if(fill_random(&b, 1) != 0) {
+            return -1;
+        }
+        if(b >= limit) {
+            continue;
+        }
+        token[i++] = charset[b % n];
     }
     token[length] = '\0';
-    
+    return 0;
 }
 
 

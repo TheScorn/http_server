@@ -256,8 +256,8 @@ int authorize(char* db_path, char* session_id, struct client_info_struct* client
     //snprintf(select_statement, 250, "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=\"%s\";", session_id);
 
     char select_statement[] = "SELECT Users.username, Sessions.expiry, Users.elevated FROM Sessions INNER JOIN Users ON Sessions.user_id = Users.user_id WHERE session_id=?;";
-
-    if(sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL) != 0) {
+    char status = sqlite3_prepare_v2(db, select_statement, -1, &stmt, NULL);
+    if(status != 0) {
         sqlite3_close(db);
         return -2;
     }

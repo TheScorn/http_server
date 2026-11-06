@@ -127,11 +127,12 @@ int send_http_200_OK_set_cookie(int client_fd, char* session_id, int session_id_
 
     http_current_time(date);
 
-    snprintf(response, sizeof(char) * (300 + session_id_len), "HTTP/1.1 200 OK\r\n"
-                                                                "Content-Type: application/json;charset=UTF-8\r\n"
-                                                                "Date: %s\r\n"
-                                                                "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d"
-                                                                , date, session_id, session_id_lifespan * 60);
+    snprintf(response, sizeof(char) * (300 + session_id_len), 
+                                        "HTTP/1.1 200 OK\r\n"
+                                        "Content-Length: 0\r\n"
+                                        "Date: %s\r\n"
+                                        "Set-Cookie: sessionId=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d\r\n\r\n"
+                                        , date, session_id, session_id_lifespan * 60);
 
     if(send_routine(client_fd, response) != 0) {
         return -1;

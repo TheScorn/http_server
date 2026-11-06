@@ -24,6 +24,10 @@ protected:
 
         sqlite3_stmt* stmt;
 
+        ASSERT_EQ(sqlite3_prepare_v2(db, "DROP TABLE IF EXISTS Sessions;", -1, &stmt, NULL), 0);
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
         ASSERT_EQ(sqlite3_prepare_v2(db, "CREATE TABLE Sessions (id_session_id INTEGER PRIMARY KEY, session_id TEXT NOT NULL, user_id INTEGER NOT NULL, expiry INTEGER NOT NULL);", -1, &stmt, NULL), 0);
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);
@@ -53,7 +57,7 @@ protected:
         sqlite3_open("test_database.db", &db);
 
         sqlite3_stmt* stmt;
-        ASSERT_EQ(sqlite3_prepare_v2(db, "DROP TABLE Sessions;", -1, &stmt, NULL), 0);
+        ASSERT_EQ(sqlite3_prepare_v2(db, "DROP TABLE IF EXISTS Sessions;", -1, &stmt, NULL), 0);
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);
         sqlite3_close(db);

@@ -66,17 +66,7 @@ int build_http_response(const char *file_path, const char *file_ext, char **resp
 
 
 
-/////////////////////////////////////////////////
-//http request handlers
 
-int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len, char* db_path);
-
-int http_logout_routine(int client_fd, char* buffer, char* db_path);
-
-int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan, char* db_path);
-
-int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add, char* db_path);
-/////////////////////////////////////////////////
 
 int handle_arguments(int argc, char **argv,struct input_args_struct *args);
 
@@ -98,7 +88,7 @@ extern "C" {
 //////////////////////////////////////////////////////////////////////
 //Simple functionalities
 
-void generate_session_id(int length, char* token);
+int generate_session_id(int length, char* token);
 
 const char *get_file_extension(const char *filename);
 
@@ -150,6 +140,17 @@ int send_http_502_Bad_Gateway(int client_fd);
 int send_http_503_Service_Unavailable(int client_fd, char* error);
 
 //////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////
+//http request handlers
+
+int http_get_routine(int client_fd, char* buffer, regmatch_t* matches, int uri_max_len, char* db_path);
+
+int http_logout_routine(int client_fd, char* buffer, char* db_path);
+
+int http_login_routine(int client_fd, char* buffer, int session_id_length, int session_id_lifespan, char* db_path);
+
+int http_NAS_routine(int client_fd, char* buffer, regmatch_t* NAS_matches, int session_id_length, struct sockaddr_in* NAS_add, char* db_path);
+/////////////////////////////////////////////////
 
 #ifdef __cplusplus
 }

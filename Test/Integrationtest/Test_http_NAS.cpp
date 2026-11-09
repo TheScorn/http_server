@@ -344,13 +344,231 @@ TEST_F(HTTPNASTest, LISTRoutineFatalError) {
     ASSERT_EQ(status, -4);
 }
 
-/*TEST_F(HTTPNASTest, GETRoutineSuccess) {
+TEST_F(HTTPNASTest, GETRoutineSuccess) {
     FakePeer NAS(NAS_sockets[1], {
-        {step_struct:: EXPECT, "000000000000002FGET /path/to/file login:thescorn password:1111"}, //47 32 + 15
-        {step_struct:: SEND, "000000000000000FF0000000000000009"}, //32
+        {step_struct:: EXPECT, "000000000000002EGET /path/to/file login:thescorn password:1111"}, //47 32 + 15
+        {step_struct:: SEND, "0000000000000021000000000000000FF0000000000000009"}, //33
         {step_struct:: EXPECT, "0000000000000006ACCEPT"},
         {step_struct:: SEND, "0000000000000009"}
     });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file";
+    char* response;
+    unsigned long long filesize;
+    unsigned long long mtime;
+
+    int status = pre_GET_routine_acc(NAS_sockets[0], path, login, password, &response, &mtime, &filesize);
+    
+    NAS.join();
+    ASSERT_EQ(status, 0);
+    EXPECT_EQ(filesize, 9);
+    EXPECT_EQ(mtime, 255);
 }
-*/
+
+TEST_F(HTTPNASTest, GETRoutineErrorFromNAS) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002EGET /path/to/file login:thescorn password:1111"}, //47 32 + 15
+        {step_struct:: SEND, "0000000000000016ERROR Unknown request!"}, //22 16 + 6
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file";
+    char* response;
+    unsigned long long filesize;
+    unsigned long long mtime;
+
+    int status = pre_GET_routine_acc(NAS_sockets[0], path, login, password, &response, &mtime, &filesize);
+    
+    NAS.join();
+    ASSERT_EQ(status, 1);
+    EXPECT_STREQ(response, "ERROR Unknown request!");
+    free(response);
+}
+
+TEST_F(HTTPNASTest, GETRoutineFatalError) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002EGET /path/to/file login:thescorn password:1111"}, //47 32 + 15
+        {step_struct:: SEND, "0000000V00000016ERROR Unknown request!"}, //22 16 + 6
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file";
+    char* response;
+    unsigned long long filesize;
+    unsigned long long mtime;
+
+    int status = pre_GET_routine_acc(NAS_sockets[0], path, login, password, &response, &mtime, &filesize);
+    
+    NAS.join();
+    ASSERT_EQ(status, -4);
+}
+
+
+TEST_F(HTTPNASTest, DELRoutineSuccess) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "0000000000000030DEL /path/to/file 1 login:thescorn password:1111"}, // 48 
+        {step_struct:: SEND, "0000000000000003ACK"} //45
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file";
+    char* response_buffer;
+    int status = DEL_routine(NAS_sockets[0], path, login, password, &response_buffer);
+
+    NAS.join();
+    EXPECT_EQ(NAS.err(), "");
+    ASSERT_EQ(status, 0);
+}
+
+TEST_F(HTTPNASTest, DELRoutineErrorFromNAS) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "0000000000000030DEL /path/to/file 1 login:thescorn password:1111"}, // 48 
+        {step_struct:: SEND, "000000000000001FERROR No such file or directory"} //31
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file";
+    char* response_buffer;
+    int status = DEL_routine(NAS_sockets[0], path, login, password, &response_buffer);
+
+    NAS.join();
+    EXPECT_EQ(NAS.err(), "");
+    ASSERT_EQ(status, 1);
+    EXPECT_STREQ(response_buffer, "ERROR No such file or directory");
+    free(response_buffer);
+}
+
+TEST_F(HTTPNASTest, MKDIRRoutineSuccess) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002FMKDIR /path/to/dir login:thescorn password:1111"}, // 47
+        {step_struct:: SEND, "0000000000000003ACK"} //45
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/dir";
+    char* response_buffer;
+    int status = MKDIR_routine(NAS_sockets[0], path, login, password, &response_buffer);
+
+    NAS.join();
+    EXPECT_EQ(NAS.err(), "");
+    ASSERT_EQ(status, 0);
+
+}
+
+
+TEST_F(HTTPNASTest, MKDIRRoutineErrorFromNAS) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002FMKDIR /path/to/dir login:thescorn password:1111"}, // 47
+        {step_struct:: SEND, "0000000000000026ERROR no access rights to dir /path/to"} // 39 = 32 + 7
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/dir";
+    char* response_buffer;
+    int status = MKDIR_routine(NAS_sockets[0], path, login, password, &response_buffer);
+
+    NAS.join();
+    EXPECT_EQ(NAS.err(), "");
+    ASSERT_EQ(status, 1);
+    EXPECT_STREQ(response_buffer, "ERROR no access rights to dir /path/to");
+    free(response_buffer);
+}
+
+
+
+
+TEST_F(HTTPNASTest, PUTRoutineSuccess) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002FPUT /path/to/file/ login:thescorn password:1111"}, //47 32 + 15
+        {step_struct:: SEND, "0000000000000003ACK"}, //33
+        {step_struct:: EXPECT, "00000000000000290000000000000000F000000000000000Fplik.txt"}, //41 = 32 + 9
+        {step_struct:: SEND, "0000000000000006ACCEPT"}
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file/";
+    char file[] = "plik.txt";
+    char* response;
+    unsigned long long filesize = 15;
+    unsigned long long mtime = 15;
+
+    int status = pre_PUT_routine(NAS_sockets[0], path, file, login, password, &filesize, &mtime, &response);
+    
+    NAS.join();
+    ASSERT_EQ(status, 0);
+}
+
+TEST_F(HTTPNASTest, PUTRoutineErrorFromNAS) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002FPUT /path/to/file/ login:thescorn password:1111"}, //47 32 + 15
+        {step_struct:: SEND, "0000000000000018ERROR no such directory!"}, //24
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file/";
+    char file[] = "plik.txt";
+    char* response;
+    unsigned long long filesize = 15;
+    unsigned long long mtime = 15;
+
+    int status = pre_PUT_routine(NAS_sockets[0], path, file, login, password, &filesize, &mtime, &response);
+    
+    NAS.join();
+    ASSERT_EQ(status, 1);
+    EXPECT_STREQ("ERROR no such directory!", response);
+    free(response);
+}
+
+
+TEST_F(HTTPNASTest, PUTRoutineREFUSE) {
+    FakePeer NAS(NAS_sockets[1], {
+        {step_struct:: EXPECT, "000000000000002FPUT /path/to/file/ login:thescorn password:1111"}, //47 32 + 15
+        {step_struct:: SEND, "0000000000000003ACK"}, //33
+        {step_struct:: EXPECT, "00000000000000290000000000000000F000000000000000Fplik.txt"}, //41 = 32 + 9
+        {step_struct:: SEND, "0000000000000006REFUSE"}
+    });
+
+    NAS.start();
+
+    char login[] = "thescorn";
+    char password[] = "1111";
+    char path[] = "/path/to/file/";
+    char file[] = "plik.txt";
+    char* response;
+    unsigned long long filesize = 15;
+    unsigned long long mtime = 15;
+
+    int status = pre_PUT_routine(NAS_sockets[0], path, file, login, password, &filesize, &mtime, &response);
+    
+    NAS.join();
+    ASSERT_EQ(status, -9);
+}
 
